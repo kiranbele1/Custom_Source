@@ -28,8 +28,8 @@ workflow:
         logLevel: INFO
         stackSpec:
           repo:
-            #url: "https://bitbucket.org/rubik_/solutions"
-            baseDir: D:\MDF\Use Case 2- Frad Intelligence Platform\nilus_group_company_source\group_company_source
+            url: "https://github.com/kiranbele1/Custom_Source"
+            baseDir: "Fraud Intelligence"
           source:
             address: "custom://GroupCompanyFraudulentDataSource?tenant_id ="a5978fb5-324d-42ad-8204-369a09188676"&client_id ="9cda6433-c406-447d-b66c-f0d6e4e514f3"&secret ="x6E8Q~Ql_jsjS1SRQdZ0y1cmtJpZiWLZDwzxjbVL"&account="storagesog"&container="raw""
           sink:
