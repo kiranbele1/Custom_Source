@@ -1,0 +1,43 @@
+name: portfolio-fradulent-data-ingestion
+version: v1
+type: workflow
+tags:
+  - fradulent-intelligence
+  - ABFSS
+  - nilus-batch
+  - lakehouse
+description: Ingest group company's fradulent data into DataOS lakehouse. 
+workflow:
+  dag:
+    - name: Fradulent-data-dag
+      spec:
+        stack: nilus:1.0
+        compute: runnable-default
+        
+        dataosSecrets:
+          - name: 
+            allKeys: true
+            consumptionType: envVars
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        logLevel: INFO
+        stackSpec:
+          repo:
+            #url: "https://bitbucket.org/rubik_/solutions"
+            baseDir: D:\MDF\Use Case 2- Frad Intelligence Platform\nilus_group_company_source\group_company_source
+          source:
+            address: "custom://GroupCompanyFraudulentDataSource?tenant_id ="a5978fb5-324d-42ad-8204-369a09188676"&client_id ="9cda6433-c406-447d-b66c-f0d6e4e514f3"&secret ="x6E8Q~Ql_jsjS1SRQdZ0y1cmtJpZiWLZDwzxjbVL"&account="storagesog"&container="raw""
+          sink:
+            address: 
+            options:
+              primary-key: pk
+              format: iceberg
+              iceberg:
+                properties:
+                  write.format.default: 
+                  write.metadata.compression-codec: 
