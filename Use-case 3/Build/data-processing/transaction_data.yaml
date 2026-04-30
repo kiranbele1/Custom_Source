@@ -1,0 +1,124 @@
+version: v1
+name: wf-frauddata-ingestion
+type: workflow
+
+tags:
+  - Tier.Gold
+  - fraud
+description: Loads raw CSV fraud data from all reporters into customer_transaction with gcid as NULL.
+
+workflow:
+  title: Data Ingestion
+
+  dag:
+    - name: wf-ingestion
+      title: Details Data Ingestion Process
+      description: Transforms and loads raw CSV data into customer_transaction Iceberg table.
+
+      spec:
+        tags:
+          - Tier.Gold
+        stack: flare:6.0
+        compute: runnable-default
+
+        stackSpec:
+          driver:
+            coreLimit: 1050m
+            cores: 1
+            memory: 1200m
+
+          executor:
+            coreLimit: 1400m
+            cores: 1
+            instances: 1
+            memory: 1600m
+
+          job:
+            explain: true
+            logLevel: INFO
+
+            inputs:
+              - name: SOFL_data
+                dataset: dataos://usecasedepot:aml/sofl/transactional/processed/?acl=rw
+                format: csv
+
+              - name: SOHFL_data
+                dataset: dataos://usecasedepot:aml/sohfl/transactional/processed/?acl=rw
+                format: csv
+
+              - name: SOSLAMC_data
+                dataset: dataos://usecasedepot:aml/soslamc/transactional/processed/?acl=rw
+                format: csv
+
+              - name: SOSLI_data
+                dataset: dataos://usecasedepot:aml/sosli/transactional/processed/?acl=rw
+                format: csv
+
+            outputs:
+              - name: customer_transaction_final
+                dataset: dataos://icebase:btsschema/customer_transaction?acl=rw
+                format: iceberg
+                description: Raw fraud transaction data loaded into Iceberg with gcid as NULL.
+                tags:
+                  - Tier.Gold
+                  - Domain.SOFL
+                title: Data Transformations
+
+                options:
+                  saveMode: append
+                  iceberg:
+                    properties:
+                      write.format.default: parquet
+                      write.metadata.compression-codec: snappy
+
+            steps:
+              - sequence:
+                  - name: customer_transaction_final
+                    sql: |
+                      SELECT *,
+                        CAST(NULL AS STRING) AS gcid,
+                        CURRENT_TIMESTAMP AS created_at,
+                        CURRENT_TIMESTAMP AS updated_at
+                      FROM (
+                        SELECT
+                          src_customer_unique_id, src_txn_unique_id, name, pan, dob,
+                          mobile_number, email_id, pincode, nationality, fraud_category,
+                          detail_of_fraud, date_of_incident, amount_involved, reported_by,
+                          product_name, product_code, product_category, risk_class, city,
+                          district, state, region, tier, aml_risk_weight,
+                          ground_of_suspicion, txn_type_name, txn_category, onboarding_date
+                        FROM SOFL_data
+
+                        UNION ALL
+
+                        SELECT
+                          src_customer_unique_id, src_txn_unique_id, name, pan, dob,
+                          mobile_number, email_id, pincode, nationality, fraud_category,
+                          detail_of_fraud, date_of_incident, amount_involved, reported_by,
+                          product_name, product_code, product_category, risk_class, city,
+                          district, state, region, tier, aml_risk_weight,
+                          ground_of_suspicion, txn_type_name, txn_category, onboarding_date
+                        FROM SOHFL_data
+
+                        UNION ALL
+
+                        SELECT
+                          src_customer_unique_id, src_txn_unique_id, name, pan, dob,
+                          mobile_number, email_id, pincode, nationality, fraud_category,
+                          detail_of_fraud, date_of_incident, amount_involved, reported_by,
+                          product_name, product_code, product_category, risk_class, city,
+                          district, state, region, tier, aml_risk_weight,
+                          ground_of_suspicion, txn_type_name, txn_category, onboarding_date
+                        FROM SOSLAMC_data
+
+                        UNION ALL
+
+                        SELECT
+                          src_customer_unique_id, src_txn_unique_id, name, pan, dob,
+                          mobile_number, email_id, pincode, nationality, fraud_category,
+                          detail_of_fraud, date_of_incident, amount_involved, reported_by,
+                          product_name, product_code, product_category, risk_class, city,
+                          district, state, region, tier, aml_risk_weight,
+                          ground_of_suspicion, txn_type_name, txn_category, onboarding_date
+                        FROM SOSLI_data
+                      )

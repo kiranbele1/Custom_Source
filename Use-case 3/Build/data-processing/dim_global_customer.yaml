@@ -1,0 +1,79 @@
+version: v1
+name: wf-sog-gcid-resolution
+type: workflow
+
+tags:
+  - Tier.Gold
+  - fraud
+description: Reads records from customer_transaction, generates gcid using MD5 and writes distinct gcid mapping into dim_global_customer. Merge handles deduplication.
+
+workflow:
+  title: GCID Resolution
+
+  dag:
+    - name: wf-sog-gcid-resolution
+      title: GCID Resolution Data Ingestion Process
+      description: Extracts distinct mobile, pan, dob combinations from customer_transaction, generates gcid as MD5 and loads into dim_global_customer. Merge ensures no duplicates.
+
+      spec:
+        tags:
+          - Tier.Gold
+        stack: flare:6.0
+        compute: runnable-default
+
+        stackSpec:
+          driver:
+            coreLimit: 1050m
+            cores: 1
+            memory: 1200m
+
+          executor:
+            coreLimit: 1400m
+            cores: 1
+            instances: 1
+            memory: 1600m
+
+          job:
+            explain: true
+            logLevel: INFO
+
+            inputs:
+              - name: customer_transaction_input
+                dataset: dataos://icebase:btsschema/customer_transaction?acl=rw
+                format: iceberg
+
+            outputs:
+              - name: dim_global_customer
+                dataset: dataos://icebase:btsschema/dim_global_customer?acl=rw
+                format: iceberg
+                description: Global customer dimension with MD5 generated GCIDs.
+                tags:
+                  - Tier.Gold
+                  - Domain.SOFL
+                title: Data Transformations
+                options:
+                  saveMode: overwrite
+                  iceberg:
+                    merge:
+                      onClause: "old.gcid = new.gcid"
+                      whenClause: "NOT MATCHED THEN INSERT *"
+                    properties:
+                      write.format.default: parquet
+                      write.metadata.compression-codec: snappy
+
+            steps:
+              - sequence:
+                  - name: dim_global_customer
+                    sql: |
+                      SELECT DISTINCT
+                        md5(CONCAT(pan, dob, mobile_number)) AS gcid,
+                        mobile_number,
+                        dob,
+                        pan,
+                        CURRENT_TIMESTAMP AS created_at,
+                        CURRENT_TIMESTAMP AS updated_at
+                      FROM customer_transaction_input
+                      WHERE pan IS NOT NULL
+                        AND dob IS NOT NULL
+                        AND mobile_number IS NOT NULL
+                        

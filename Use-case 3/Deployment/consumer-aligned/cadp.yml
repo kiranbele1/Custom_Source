@@ -1,0 +1,37 @@
+# Important: Replace 'abc' with your initials to personalize and distinguish the resource you’ve created.
+name: fraud-trend-cadp
+version: v1beta
+entity: product
+type: data
+description: Analyze the sales target and find achievement percentage.
+tags:
+  - DPDomain.Marketing
+  - DPUsecase.Customer Segmentation
+  - DPUsecase.Product Recommendation
+  - DPTier.Consumer Aligned
+v1beta:
+  data:
+    meta:
+      title: Fraud Analysis
+      #sourceCodeUrl: https://github.com/Aadi-session/BTS-onboarding/blob/main/
+      sourceCodeUrl: D:\MDF\Use-Case3
+      #trackerUrl: https://rubikai.atlassian.net/browse
+      trackerUrl: D:\MDF\Use-Case3\Build\semantic-model
+    syncFlags:
+    collaborators:
+      - name: kirankadam
+        description: owner
+    resource:
+      refType: dataos
+      ref: bundle:v1beta:fraud-trend-analysis-bundle-kb
+    inputs:
+      - refType: dataos
+        ref: dataos://icebase:btsschema/fact_fraud_data
+    outputs:
+      - refType: dataos
+        ref: dataos://icebase:btsschema/fraud-trend-view   # Verify the Depot name for your training instance
+
+    ports:
+      lens:
+        ref: lens:v1alpha:btsfraudtrend:public
+        refType: dataos

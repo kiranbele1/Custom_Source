@@ -1,0 +1,177 @@
+tables:
+  - name: fraud360_dataset
+    sql: {{ load_sql('fraud360_dataset') }}
+    description: Unified fraud 360 dataset combining customer sales profile details, order transactions, and salesfact, salesreps, leads into a single source for analytics and reporting.
+    data_source: icebase
+    public: true
+
+    dimensions:
+      - name: entity_id
+        description: unique entity id.
+        type: number
+        sql: entity_id
+        primary_key: true
+        public: true
+
+      - name: entity_code
+        description: Unique prefix folder, table and component names
+        type: string
+        sql: entity_code
+        public: true
+
+      - name: entity_name
+        description: Full legal name
+        type: string
+        sql: entity_name
+
+      - name: entity_type
+        description: NBFC or BANK or AMC or MFI.
+        type: string
+        sql: entity_type
+
+      - name: reported_by
+        description: Reported by
+        type: string
+        sql: reported_by
+
+      - name: customer_pan
+        description: PAN number of customer.
+        type: string
+        sql: customer_pan
+        public: true
+
+      - name: name
+        description: Name of the customer.
+        type: string
+        sql: name
+
+      - name: mobile_number
+        description: mobile number of customer
+        type: number
+        sql: mobile_number
+
+      - name: nationality
+        description: Nationality of customer
+        type: string
+        sql: nationality
+
+      - name: dob
+        description: DOB of customer
+        type: number
+        sql: dob        
+
+      - name: current_address_pincode
+        description: Current Address pin code of customer
+        type: number
+        sql: current_address_pincode
+        public: true
+
+      - name: permanent_address_pincode
+        description: Permanent Address pin code of customer
+        type: number
+        sql: permanent_address_pincode
+
+      - name: product_id
+        description: unique id of product
+        type: number
+        sql: product_id
+
+      - name: product_name
+        description: Name of the product
+        type: string
+        sql: product_name
+
+      - name: product_category
+        description: Category of product
+        type: string
+        sql: product_category
+
+      - name: product_sub_category
+        description: Sub category of product
+        type: string
+        sql: product_sub_category
+
+      - name: risk_class
+        description: Class of risk
+        type: string
+        sql: risk_class
+
+      - name: txn_type_id
+        description: Transaction type id
+        type: number
+        sql: txn_type_id
+
+      - name: txn_type_name
+        description: Transaction type name
+        type: string
+        sql: txn_type_name
+
+      - name: txn_category
+        description: Transaction category
+        type: string
+        sql: txn_category
+
+      - name: aml_risk_weight
+        description: AML risk weight
+        type: number
+        sql: aml_risk_weight  
+    segments:
+      - name: fraud_category_filter
+        sql: "{TABLE.fraud_category} = {fraud_category}"
+        description: Filters records by a selected fraud category.
+
+      - name: region_filter
+        sql: "{TABLE.region} = {region}"
+        description: Filters records by the selected region.
+
+      - name: entity_type_filter
+        sql: "{TABLE.entity_type} = {entity_type}"
+        description: Filters records by the selected entity type.
+
+    measures:
+      - name: total_str_count
+        sql: "COUNT(incident_id)""
+        type: count
+        description: Total Fraud incident count.
+
+      - name: total_fraud_event_count
+        sql: "COUNT(fraud_event_id)"
+        type: count
+        description: Total Fraud event count.
+
+      - name: total_exposure_amt_in_lakh
+        sql: "SUM(amount_involved)"
+        type: sum
+        description: Total amount exposed in lakh
+
+      - name: avg_fraud_ticket_size
+        sql: "SUM(amount_involved) / COUNT(fraud_event_id)"
+        type: number
+        description: Aveage Fraud ticket size
+
+      - name: fraud_rate_pct
+        sql: "COUNT(fraud_event_id) / total_str_count * 100 "
+        type: number
+        description: Fraud rate percentages
+
+      - name: str_filing_timeliness_pct
+        sql: "SUM(revenue) / COUNT(DISTINCT order_id)"
+        type: number
+        description: Average revenue per order.
+
+      - name: consent_compliance_rate_pct
+        sql: "SUM(revenue) / COUNT(DISTINCT customer_id)"
+        type: number
+        description: Average revenue per unique customer.
+
+      - name: region_risk_index
+        sql: "(COUNT(DISTINCT CASE WHEN order_count > 1 THEN customer_id END) / COUNT(DISTINCT customer_id)) * 100"
+        type: number
+        description: Percentage of customers with more than one order.
+
+      - name: high_risk_region_count
+        sql: "COUNT(DISTINCT dimension_value WHERE risk_tier = 'High')"
+        type: number
+        description: Percentage of leads converted into orders.
+
+      

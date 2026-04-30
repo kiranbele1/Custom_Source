@@ -1,0 +1,21 @@
+name: usecasedepot
+type: depot
+version: v1
+description: "Azure thirdparty Data Depot"
+layer: user
+depot:
+  type: ABFSS
+  spec:
+    account: storagesog
+    container: raw
+    relativePath: aml
+  external: true
+  secrets:
+    - name: usecasedepot-rw
+      acl: rw
+      keys:
+        - usecasedepot-rw
+    - name: usecasedepot-r
+      acl: r
+      keys:
+        - usecasedepot-r

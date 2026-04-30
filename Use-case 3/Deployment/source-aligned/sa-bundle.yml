@@ -1,0 +1,14 @@
+version: v1beta
+name: fraud-bundle
+type: bundle
+tags:
+  - dataproduct
+  - fraud360
+  - azure
+description: Bundle for fraud 360 demo with depot, scanner, flare, and soda
+layer: user
+
+bundle:
+  resources:
+    - id: fact_fraud_data
+      file: /Users/paragkadam/Documents/Use-Case3/Build/data-processing/fact_fraud_data.yaml

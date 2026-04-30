@@ -1,0 +1,45 @@
+name: fact-fraud-data
+version: v1beta
+type: data
+description: Source-aligned Data Product
+tags:
+  - BTS Onboarding
+  - DPUsecase.customer_data
+  - DPTier.Source Aligned
+v1beta:
+  data:
+    meta:
+      title: fraud Data - BTS
+    collaborators:
+      - name: paragkadam
+        description: owner
+      - name: paragkadam
+        description: developer
+      - name: practice
+        description: consumer
+
+    resource:
+      refType: dataos
+      ref: bundle:v1beta:fraud-bundle
+    inputs:
+      - refType: dataos
+        ref: dataos://icebase:btsschema/customer_transaction
+
+      - refType: dataos
+        ref: dataos://icebase:btsschema/dim_entity_master
+
+      - refType: dataos
+        ref: dataos://icebase:btsschema/dim_products_master
+
+      - refType: dataos
+        ref: dataos://icebase:btsschema/dim_customer        
+
+      - refType: dataos
+        ref: dataos://icebase:btsschema/dim_global_customer            
+
+    outputs:
+
+      - refType: dataos
+        ref: dataset:icebase:btsschema:fact_fraud_data
+
+        

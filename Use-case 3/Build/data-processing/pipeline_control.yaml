@@ -1,0 +1,71 @@
+version: v1
+name: wf-pipeline-control
+type: workflow
+
+tags:
+  - Tier.Gold
+  - fraud
+description: Tracks MAX(created_at) per reported_by from customer_transaction for incremental load control.
+
+workflow:
+  title: Pipeline Control
+
+  dag:
+    - name: wf-pipeline-control
+      title: Pipeline Control Data Ingestion Process
+      description: Computes and stores the latest ingestion timestamp per reporter for watermark tracking.
+
+      spec:
+        tags:
+          - Tier.Gold
+        stack: flare:6.0
+        compute: runnable-default
+
+        stackSpec:
+          driver:
+            coreLimit: 1050m
+            cores: 1
+            memory: 1200m
+
+          executor:
+            coreLimit: 1400m
+            cores: 1
+            instances: 1
+            memory: 1600m
+
+          job:
+            explain: true
+            logLevel: INFO
+
+            inputs:
+              - name: customer_transaction_input
+                dataset: dataos://icebase:btsschema/customer_transaction?acl=rw
+                format: iceberg
+
+            outputs:
+              - name: pipeline_control_final
+                dataset: dataos://icebase:btsschema/pipeline_control?acl=rw
+                format: iceberg
+                description: Watermark table tracking MAX created_at per reported_by.
+                tags:
+                  - Tier.Gold
+                  - Domain.SOFL
+                title: Data Transformations
+
+                options:
+                  saveMode: overwrite
+                  iceberg:
+                    properties:
+                      write.format.default: parquet
+                      write.metadata.compression-codec: snappy
+
+            steps:
+              - sequence:
+                  - name: pipeline_control_final
+                    sql: |
+                      SELECT
+                        uuid() AS control_id,
+                        reported_by,
+                        MAX(created_at) AS latest_date
+                      FROM customer_transaction_input
+                      GROUP BY reported_by
