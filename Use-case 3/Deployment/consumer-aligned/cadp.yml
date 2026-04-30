@@ -13,10 +13,7 @@ v1beta:
   data:
     meta:
       title: Fraud Analysis
-      #sourceCodeUrl: https://github.com/Aadi-session/BTS-onboarding/blob/main/
-      sourceCodeUrl: D:\MDF\Use-Case3
-      #trackerUrl: https://rubikai.atlassian.net/browse
-      trackerUrl: D:\MDF\Use-Case3\Build\semantic-model
+      sourceCodeUrl: https://github.com/kiranbele1/Custom_Source
     syncFlags:
     collaborators:
       - name: kirankadam
