@@ -1,7 +1,7 @@
 tables:
-  - name: fraud360_dataset
-    sql: {{ load_sql('fraud360_dataset') }}
-    description: Unified fraud 360 dataset combining customer sales profile details, order transactions, and salesfact, salesreps, leads into a single source for analytics and reporting.
+  - name: fraud_intel_unified
+    sql: {{ load_sql('fraud_intel_unified') }}
+    description: Unified fraud intel dataset combining customer sales profile details, order transactions, and salesfact, salesreps, leads into a single source for analytics and reporting.
     data_source: icebase
     public: true
 
