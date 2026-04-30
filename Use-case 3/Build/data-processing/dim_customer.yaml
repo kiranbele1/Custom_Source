@@ -86,3 +86,4 @@ workflow:
                         FROM customer_transaction_input
                         WHERE gcid IS NOT NULL
                       )
+                      

@@ -4,7 +4,7 @@ type: workflow
 
 tags:
   - Tier.Gold
-  - fraud
+
 description: Tracks MAX(created_at) per reported_by from customer_transaction for incremental load control.
 
 workflow:

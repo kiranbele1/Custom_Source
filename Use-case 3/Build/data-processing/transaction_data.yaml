@@ -39,19 +39,19 @@ workflow:
 
             inputs:
               - name: SOFL_data
-                dataset: dataos://usecasedepot:aml/sofl/transactional/processed/?acl=rw
+                dataset: dataos://usecasedepot:aml/sofl/transactional/input/?acl=rw
                 format: csv
 
               - name: SOHFL_data
-                dataset: dataos://usecasedepot:aml/sohfl/transactional/processed/?acl=rw
+                dataset: dataos://usecasedepot:aml/sohfl/transactional/input/?acl=rw
                 format: csv
 
               - name: SOSLAMC_data
-                dataset: dataos://usecasedepot:aml/soslamc/transactional/processed/?acl=rw
+                dataset: dataos://usecasedepot:aml/soslamc/transactional/input/?acl=rw
                 format: csv
 
               - name: SOSLI_data
-                dataset: dataos://usecasedepot:aml/sosli/transactional/processed/?acl=rw
+                dataset: dataos://usecasedepot:aml/sosli/transactional/input/?acl=rw
                 format: csv
 
             outputs:
