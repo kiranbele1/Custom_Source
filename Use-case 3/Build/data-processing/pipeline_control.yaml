@@ -4,7 +4,8 @@ type: workflow
 
 tags:
   - Tier.Gold
-
+  - fraud
+  - Sterling & Oak Group   
 description: Tracks MAX(created_at) per reported_by from customer_transaction for incremental load control.
 
 workflow:
