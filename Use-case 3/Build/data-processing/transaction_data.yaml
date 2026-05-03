@@ -5,6 +5,7 @@ type: workflow
 tags:
   - Tier.Gold
   - fraud
+  - Sterling & Oak Group   
 description: Loads raw CSV fraud data from all reporters into customer_transaction with gcid as NULL.
 
 workflow:
