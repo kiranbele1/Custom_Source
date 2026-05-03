@@ -109,7 +109,7 @@ workflow:
                       SELECT DISTINCT
                         md5(CONCAT(pan, dob_normalized, mobile_number)) AS gcid,
                         mobile_number,
-                        dob_normalized                                   AS dob,
+                        dob_normalized AS dob,
                         pan,
                         CURRENT_TIMESTAMP AS created_at,
                         CURRENT_TIMESTAMP AS updated_at
