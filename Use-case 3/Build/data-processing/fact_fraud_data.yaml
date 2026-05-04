@@ -4,7 +4,7 @@ type: workflow
 tags:
   - Tier.Gold
   - fraud
-description: Transforms and joins customer_transaction with dimension tables into fact_fraud_data. Deduplicates at source before watermark filter to handle ingestion duplicates.
+description: Transforms and joins customer_transaction with dimension tables into fact_fraud_data.
 
 workflow:
   title: Data Ingestion
@@ -62,11 +62,6 @@ workflow:
               - name: fact_fraud_data
                 dataset: dataos://icebase:btsschema/fact_fraud_data?acl=rw
                 format: Iceberg
-                description: Clean fact table with one row per unique customer fraud event.
-                tags:
-                  - Tier.Gold
-                  - Domain.SOFL
-                title: Data Transformations
                 options:
                   saveMode: append
                   iceberg:
@@ -77,20 +72,19 @@ workflow:
             steps:
               - sequence:
 
-                  # Step 1: watermark
+                  # Step 1: watermark — MIN across all reporters
                   - name: watermark
                     sql: |
                       SELECT MIN(latest_date) AS watermark_ts
                       FROM pipeline_control
 
-                  # Step 2: deduplicate customer_transaction FULLY first
-                  # before applying any watermark filter
-                  # partitioning by BOTH src_customer_unique_id AND gcid
-                  # handles cases where same person has multiple rows from
-                  # multiple ingestion runs with different created_at timestamps
+                  # Step 2: deduplicate customer_transaction by gcid first
+                  # same person can appear multiple times across ingestion runs
+                  # REPARTITION hint prevents Spark optimizer from collapsing
+                  # this subquery and losing the dedup before the final join
                   - name: ct_fully_deduped
                     sql: |
-                      SELECT
+                      SELECT /*+ REPARTITION(1) */
                         src_customer_unique_id,
                         src_txn_unique_id,
                         name,
@@ -123,8 +117,7 @@ workflow:
                         created_at,
                         updated_at
                       FROM (
-                        SELECT
-                          *,
+                        SELECT *,
                           ROW_NUMBER() OVER (
                             PARTITION BY gcid
                             ORDER BY updated_at DESC
@@ -134,8 +127,9 @@ workflow:
                       )
                       WHERE rn = 1
 
-                  # Step 3: now apply watermark filter on clean deduped data
-                  # using MAX(created_at) per gcid so we use the latest timestamp
+                  # Step 3: apply watermark filter on clean deduped data
+                  # CROSS JOIN on single-row watermark to make watermark_ts
+                  # available as a column for filtering
                   - name: ct_incremental
                     sql: |
                       SELECT ct.*
@@ -143,10 +137,16 @@ workflow:
                       CROSS JOIN watermark w
                       WHERE ct.updated_at > w.watermark_ts
 
-                  # Step 4: dedup dim_customer - one active row per customer
+                  # Step 4: get ONE active row per customer from dim_customer
+                  # PARTITION BY gcid + ORDER BY customerid DESC gives the
+                  # most recently inserted active row per customer
+                  # REPARTITION hint prevents Spark from collapsing this
+                  # subquery and joining on src_customer_unique_id instead
+                  # of gcid — proven bug in logs (Optimized Logical Plan
+                  # showed src_customer_unique_id join bypass)
                   - name: dim_customer_active
                     sql: |
-                      SELECT
+                      SELECT /*+ REPARTITION(1) */
                         customerid,
                         src_customer_unique_id,
                         reported_by,
@@ -161,18 +161,17 @@ workflow:
                         created_at,
                         updated_at
                       FROM (
-                        SELECT
-                          *,
+                        SELECT *,
                           ROW_NUMBER() OVER (
-                            PARTITION BY src_customer_unique_id
-                            ORDER BY effective_from DESC
+                            PARTITION BY gcid
+                            ORDER BY customerid DESC
                           ) AS rn
                         FROM dim_customer
                         WHERE is_current = 'Y'
                       )
                       WHERE rn = 1
 
-                  # Step 5: dedup dim_entity_master - one row per entity_code
+                  # Step 5: dedup dim_entity_master — one row per entity_code
                   - name: dim_entity_deduped
                     sql: |
                       SELECT
@@ -183,8 +182,7 @@ workflow:
                         data_provider_flag,
                         onboarding_date
                       FROM (
-                        SELECT
-                          *,
+                        SELECT *,
                           ROW_NUMBER() OVER (
                             PARTITION BY entity_code
                             ORDER BY onboarding_date DESC
@@ -193,7 +191,7 @@ workflow:
                       )
                       WHERE rn = 1
 
-                  # Step 6: dedup dim_products_master - one row per product_name
+                  # Step 6: dedup dim_products_master — one row per product_name
                   - name: dim_products_deduped
                     sql: |
                       SELECT
@@ -205,8 +203,7 @@ workflow:
                         risk_class,
                         created_at
                       FROM (
-                        SELECT
-                          *,
+                        SELECT *,
                           ROW_NUMBER() OVER (
                             PARTITION BY product_name
                             ORDER BY created_at DESC
@@ -215,7 +212,14 @@ workflow:
                       )
                       WHERE rn = 1
 
-                  # Step 7: final join on clean data from all sides
+                  # Step 7: final join — all sides are clean and deduped
+                  # ct_incremental    : 1 row per gcid after watermark filter
+                  # dim_customer_active: 1 row per gcid (MAX customerid)
+                  # dim_entity_deduped : 1 row per entity_code
+                  # dim_products_deduped: 1 row per product_name
+                  # JOIN key for dim_customer is gcid — NOT src_customer_unique_id
+                  # src_customer_unique_id varies across reporters for same person
+                  # gcid is the true cross-reporter identity key
                   - name: fact_fraud_data
                     sql: |
                       SELECT
@@ -248,16 +252,13 @@ workflow:
                         t.txn_type_name,
                         t.txn_category,
                         t.onboarding_date,
-
                         t.gcid,
-
                         e.entity_id,
                         e.entity_code,
                         e.entity_name,
                         e.entity_type,
                         e.data_provider_flag,
                         e.onboarding_date              AS entity_onboarding_date,
-
                         p.product_id,
                         p.product_code                 AS master_product_code,
                         p.product_name                 AS master_product_name,
@@ -265,14 +266,12 @@ workflow:
                         p.sub_category,
                         p.risk_class                   AS master_risk_class,
                         p.created_at,
-
                         dc.customerid,
                         current_date()                 AS loaded_at
-
                       FROM ct_incremental t
                       LEFT JOIN dim_entity_deduped e
                         ON t.reported_by = e.entity_code
                       LEFT JOIN dim_products_deduped p
                         ON t.product_name = p.product_name
                       LEFT JOIN dim_customer_active dc
-                        ON t.src_customer_unique_id = dc.src_customer_unique_id
+                        ON t.gcid = dc.gcid
