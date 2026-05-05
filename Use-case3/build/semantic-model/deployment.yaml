@@ -15,8 +15,8 @@ lens:
     name: training
     catalog: icebase
   repo:
-    url: https://github.com/kiranbele1/Custom_Source
-    lensBaseDir: Custom_Source/build/semantic-model/model
+    url: https://github.com/kiranbele1/Custom_Source/Use-case3  
+    lensBaseDir: Custom_Source/Use-case-3/build/semantic-model/model
     syncFlags:
       - --ref=main
   outputs:
