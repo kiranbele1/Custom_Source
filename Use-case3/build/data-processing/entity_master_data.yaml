@@ -4,7 +4,8 @@ type: workflow
 tags:
   - Tier.Gold
   - fraud
-description: The workflow transforms and cleans data from source, ensuring it aligns with Lakehouse schema standards. After transformations, the data is ingested into Lakehouse, enabling reliable access for analytics and downstream applications.
+  - Sterling & Oak Group   
+description: The workflow transforms and cleans data from source, ensuring it aligns with Lakehouse schema standards. After transformations, the entity master data is ingested into Lakehouse, enabling reliable access for analytics and downstream applications.
 workflow:
   title: Data Ingestion 
   dag:
@@ -41,7 +42,7 @@ workflow:
                 description: The dataset contains comprehensive information about business opportunities within the practice domain, including opportunity details, client information, engagement types, and potential revenue. This dataset enables tracking of opportunity progression, performance analysis, and strategic decision-making for practice growth and client relationship management.
                 tags:
                   - Tier.Gold
-                  - Domain.SOFL
+                  - Domain.SOG
                 options:
                   saveMode: append
                   iceberg:                              

@@ -5,13 +5,14 @@ type: workflow
 tags:
   - Tier.Gold
   - fraud
+  - Sterling & Oak Group   
 description: The workflow transforms and cleans data from source, ensuring it aligns with Lakehouse schema standards. After transformations, the data is ingested into Lakehouse, enabling reliable access for analytics and downstream applications.
 workflow:
   title: Data Ingestion 
   dag:
     - name: wf-ingestion
       title: Details Data Ingestion Process
-      description: The DAG for Data Transformation and Ingestion automates the process of transforming and cleaning opportunities data before loading it into the target system, ensuring it is ready for analysis and reporting.
+      description: The DAG for Data Transformation and Ingestion automates the process of transforming and cleaning product data before loading it into the target system, ensuring it is ready for analysis and reporting.
       spec:
         tags:
           - Tier.Gold

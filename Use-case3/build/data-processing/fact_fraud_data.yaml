@@ -4,18 +4,20 @@ type: workflow
 tags:
   - Tier.Gold
   - fraud
-description: The workflow transforms and cleans data from source, ensuring it aligns with Lakehouse schema standards. After transformations, the data is ingested into Lakehouse, enabling reliable access for analytics and downstream applications.
+description: Transforms and joins customer_transaction with dimension tables into fact_fraud_data.
+
 workflow:
-  title: Data Ingestion 
+  title: Data Ingestion
   dag:
     - name: wf-fraud-360-dataset
       title: Details Data Ingestion Process
-      description: The DAG for Data Transformation and Ingestion automates the process of transforming and cleaning opportunities data before loading it into the target system, ensuring it is ready for analysis and reporting.
+
       spec:
         tags:
           - Tier.Gold
         stack: flare:6.0
         compute: runnable-default
+
         stackSpec:
           driver:
             coreLimit: 1050m
@@ -25,12 +27,19 @@ workflow:
             coreLimit: 1400m
             cores: 1
             instances: 1
-            memory: 1600m 
+            memory: 1600m
+
           job:
-            explain: true  
-            inputs: 
+            explain: true
+            logLevel: INFO
+
+            inputs:
               - name: customer_transaction
                 dataset: dataos://icebase:btsschema/customer_transaction?acl=rw
+                format: iceberg
+
+              - name: pipeline_control
+                dataset: dataos://icebase:btsschema/pipeline_control?acl=rw
                 format: iceberg
 
               - name: dim_entity_master
@@ -43,35 +52,178 @@ workflow:
 
               - name: dim_global_customer
                 dataset: dataos://icebase:btsschema/dim_global_customer?acl=rw
-                format: iceberg                
+                format: iceberg
 
               - name: dim_customer
                 dataset: dataos://icebase:btsschema/dim_customer?acl=rw
                 format: iceberg
 
-            logLevel: INFO
             outputs:
               - name: fact_fraud_data
                 dataset: dataos://icebase:btsschema/fact_fraud_data?acl=rw
                 format: Iceberg
-                description: The dataset contains comprehensive information about business opportunities within the practice domain, including opportunity details, client information, engagement types, and potential revenue. This dataset enables tracking of opportunity progression, performance analysis, and strategic decision-making for practice growth and client relationship management.
-                tags:
-                  - Tier.Gold
-                  - Domain.SOFL
                 options:
-                  saveMode: overwrite
-                  iceberg:              
+                  saveMode: append
+                  iceberg:
                     properties:
                       write.format.default: parquet
                       write.metadata.compression-codec: snappy
-                title: Data Transformations
 
             steps:
               - sequence:
-                  - name: fact_fraud_data
-                    sql: |  
+
+                  # Step 1: watermark — MIN across all reporters
+                  - name: watermark
+                    sql: |
+                      SELECT MIN(latest_date) AS watermark_ts
+                      FROM pipeline_control
+
+                  # Step 2: deduplicate customer_transaction by gcid first
+                  # same person can appear multiple times across ingestion runs
+                  # REPARTITION hint prevents Spark optimizer from collapsing
+                  # this subquery and losing the dedup before the final join
+                  - name: ct_fully_deduped
+                    sql: |
+                      SELECT /*+ REPARTITION(1) */
+                        src_customer_unique_id,
+                        src_txn_unique_id,
+                        name,
+                        pan,
+                        dob,
+                        mobile_number,
+                        email_id,
+                        pincode,
+                        nationality,
+                        fraud_category,
+                        detail_of_fraud,
+                        date_of_incident,
+                        amount_involved,
+                        reported_by,
+                        product_name,
+                        product_code,
+                        product_category,
+                        risk_class,
+                        city,
+                        district,
+                        state,
+                        region,
+                        tier,
+                        aml_risk_weight,
+                        ground_of_suspicion,
+                        txn_type_name,
+                        txn_category,
+                        onboarding_date,
+                        gcid,
+                        created_at,
+                        updated_at
+                      FROM (
+                        SELECT *,
+                          ROW_NUMBER() OVER (
+                            PARTITION BY gcid
+                            ORDER BY updated_at DESC
+                          ) AS rn
+                        FROM customer_transaction
+                        WHERE gcid IS NOT NULL
+                      )
+                      WHERE rn = 1
+
+                  # Step 3: apply watermark filter on clean deduped data
+                  # CROSS JOIN on single-row watermark to make watermark_ts
+                  # available as a column for filtering
+                  - name: ct_incremental
+                    sql: |
+                      SELECT ct.*
+                      FROM ct_fully_deduped ct
+                      CROSS JOIN watermark w
+                      WHERE ct.updated_at > w.watermark_ts
+
+                  # Step 4: get ONE active row per customer from dim_customer
+                  # PARTITION BY gcid + ORDER BY customerid DESC gives the
+                  # most recently inserted active row per customer
+                  # REPARTITION hint prevents Spark from collapsing this
+                  # subquery and joining on src_customer_unique_id instead
+                  # of gcid — proven bug in logs (Optimized Logical Plan
+                  # showed src_customer_unique_id join bypass)
+                  - name: dim_customer_active
+                    sql: |
+                      SELECT /*+ REPARTITION(1) */
+                        customerid,
+                        src_customer_unique_id,
+                        reported_by,
+                        mobile,
+                        pan,
+                        dob,
+                        email,
+                        gcid,
+                        effective_from,
+                        effective_to,
+                        is_current,
+                        created_at,
+                        updated_at
+                      FROM (
+                        SELECT *,
+                          ROW_NUMBER() OVER (
+                            PARTITION BY gcid
+                            ORDER BY customerid DESC
+                          ) AS rn
+                        FROM dim_customer
+                        WHERE is_current = 'Y'
+                      )
+                      WHERE rn = 1
+
+                  # Step 5: dedup dim_entity_master — one row per entity_code
+                  - name: dim_entity_deduped
+                    sql: |
                       SELECT
-                        uuid() AS fraud_event_id,
+                        entity_id,
+                        entity_code,
+                        entity_name,
+                        entity_type,
+                        data_provider_flag,
+                        onboarding_date
+                      FROM (
+                        SELECT *,
+                          ROW_NUMBER() OVER (
+                            PARTITION BY entity_code
+                            ORDER BY onboarding_date DESC
+                          ) AS rn
+                        FROM dim_entity_master
+                      )
+                      WHERE rn = 1
+
+                  # Step 6: dedup dim_products_master — one row per product_name
+                  - name: dim_products_deduped
+                    sql: |
+                      SELECT
+                        product_id,
+                        product_code,
+                        product_name,
+                        product_category,
+                        sub_category,
+                        risk_class,
+                        created_at
+                      FROM (
+                        SELECT *,
+                          ROW_NUMBER() OVER (
+                            PARTITION BY product_name
+                            ORDER BY created_at DESC
+                          ) AS rn
+                        FROM dim_products_master
+                      )
+                      WHERE rn = 1
+
+                  # Step 7: final join — all sides are clean and deduped
+                  # ct_incremental    : 1 row per gcid after watermark filter
+                  # dim_customer_active: 1 row per gcid (MAX customerid)
+                  # dim_entity_deduped : 1 row per entity_code
+                  # dim_products_deduped: 1 row per product_name
+                  # JOIN key for dim_customer is gcid — NOT src_customer_unique_id
+                  # src_customer_unique_id varies across reporters for same person
+                  # gcid is the true cross-reporter identity key
+                  - name: fact_fraud_data
+                    sql: |
+                      SELECT
+                        uuid()                          AS fraud_event_id,
                         t.src_customer_unique_id,
                         t.src_txn_unique_id,
                         t.name,
@@ -99,33 +251,27 @@ workflow:
                         t.ground_of_suspicion,
                         t.txn_type_name,
                         t.txn_category,
-                        t.onboarding_date,          
-
+                        t.onboarding_date,
                         t.gcid,
-
                         e.entity_id,
                         e.entity_code,
                         e.entity_name,
                         e.entity_type,
                         e.data_provider_flag,
-                        e.onboarding_date             AS entity_onboarding_date,   
-
+                        e.onboarding_date              AS entity_onboarding_date,
                         p.product_id,
-                        p.product_code                AS master_product_code,       
-                        p.product_name                AS master_product_name,       
-                        p.product_category            AS master_product_category,   
+                        p.product_code                 AS master_product_code,
+                        p.product_name                 AS master_product_name,
+                        p.product_category             AS master_product_category,
                         p.sub_category,
-                        p.risk_class                  AS master_risk_class,         
+                        p.risk_class                   AS master_risk_class,
                         p.created_at,
-
                         dc.customerid,
-                        current_date()                AS loaded_at
-
-                      FROM customer_transaction t
-                      LEFT JOIN dim_entity_master e
+                        current_date()                 AS loaded_at
+                      FROM ct_incremental t
+                      LEFT JOIN dim_entity_deduped e
                         ON t.reported_by = e.entity_code
-                      LEFT JOIN dim_products_master p
+                      LEFT JOIN dim_products_deduped p
                         ON t.product_name = p.product_name
-                      LEFT JOIN dim_customer dc
-                        ON t.src_customer_unique_id = dc.src_customer_unique_id
-                        
+                      LEFT JOIN dim_customer_active dc
+                        ON t.gcid = dc.gcid
