@@ -7,4 +7,3 @@ user_groups:
       - jobs
       - source
     includes: "*"
-    
