@@ -1,0 +1,62 @@
+name: btsfraudtrend
+version: v1alpha
+layer: user
+type: lens
+tags:
+  - lens
+description: This semantic model provides comprehensive insights for sales360 analysis.
+lens:
+  compute: runnable-default
+  # secrets:
+  #   - name: bitbucket-sv
+  #     allKeys: true
+  source:
+    type: minerva
+    name: training
+    catalog: icebase
+  repo:
+    url: https://github.com/kiranbele1/Custom_Source
+    lensBaseDir: Custom_Source/Use-case 3/Build/semantic-model
+    syncFlags:
+      - --ref=main
+  outputs:
+      - refType: dataos
+        ref: dataset:icebase:schema:btsschema
+
+  api:   # optional
+    replicas: 1 # optional
+    logLevel: Info  # optional
+    # envs:
+    #   LENS2_SCHEDULED_REFRESH_TIMEZONES: "UTC,America/Vancouver,America/Toronto"
+    resources: # optional
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 256m
+        memory: 256Mi
+  worker: # optional
+    replicas: 1 # optional
+    logLevel: Info  # optional
+    # envs:
+    #   LENS2_SCHEDULED_REFRESH_TIMEZONES: "UTC,America/Vancouver,America/Toronto"
+    resources: # optional
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 256m
+        memory: 256Mi
+  router: # optional
+    logLevel: info  # optional
+    # envs:
+    #   LENS2_SCHEDULED_REFRESH_TIMEZONES: "UTC,America/Vancouver,America/Toronto"
+    resources: # optional
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 256m
+        memory: 256Mi
+  metric:
+    logLevel: info

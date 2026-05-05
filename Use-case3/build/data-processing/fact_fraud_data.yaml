@@ -1,0 +1,131 @@
+version: v1
+name: wf-fraud-360-dataset
+type: workflow
+tags:
+  - Tier.Gold
+  - fraud
+description: The workflow transforms and cleans data from source, ensuring it aligns with Lakehouse schema standards. After transformations, the data is ingested into Lakehouse, enabling reliable access for analytics and downstream applications.
+workflow:
+  title: Data Ingestion 
+  dag:
+    - name: wf-fraud-360-dataset
+      title: Details Data Ingestion Process
+      description: The DAG for Data Transformation and Ingestion automates the process of transforming and cleaning opportunities data before loading it into the target system, ensuring it is ready for analysis and reporting.
+      spec:
+        tags:
+          - Tier.Gold
+        stack: flare:6.0
+        compute: runnable-default
+        stackSpec:
+          driver:
+            coreLimit: 1050m
+            cores: 1
+            memory: 1200m
+          executor:
+            coreLimit: 1400m
+            cores: 1
+            instances: 1
+            memory: 1600m 
+          job:
+            explain: true  
+            inputs: 
+              - name: customer_transaction
+                dataset: dataos://icebase:btsschema/customer_transaction?acl=rw
+                format: iceberg
+
+              - name: dim_entity_master
+                dataset: dataos://icebase:btsschema/dim_entity_master?acl=rw
+                format: iceberg
+
+              - name: dim_products_master
+                dataset: dataos://icebase:btsschema/dim_products_master?acl=rw
+                format: iceberg
+
+              - name: dim_global_customer
+                dataset: dataos://icebase:btsschema/dim_global_customer?acl=rw
+                format: iceberg                
+
+              - name: dim_customer
+                dataset: dataos://icebase:btsschema/dim_customer?acl=rw
+                format: iceberg
+
+            logLevel: INFO
+            outputs:
+              - name: fact_fraud_data
+                dataset: dataos://icebase:btsschema/fact_fraud_data?acl=rw
+                format: Iceberg
+                description: The dataset contains comprehensive information about business opportunities within the practice domain, including opportunity details, client information, engagement types, and potential revenue. This dataset enables tracking of opportunity progression, performance analysis, and strategic decision-making for practice growth and client relationship management.
+                tags:
+                  - Tier.Gold
+                  - Domain.SOFL
+                options:
+                  saveMode: overwrite
+                  iceberg:              
+                    properties:
+                      write.format.default: parquet
+                      write.metadata.compression-codec: snappy
+                title: Data Transformations
+
+            steps:
+              - sequence:
+                  - name: fact_fraud_data
+                    sql: |  
+                      SELECT
+                        uuid() AS fraud_event_id,
+                        t.src_customer_unique_id,
+                        t.src_txn_unique_id,
+                        t.name,
+                        t.pan,
+                        t.dob,
+                        t.mobile_number,
+                        t.email_id,
+                        t.pincode,
+                        t.nationality,
+                        t.fraud_category,
+                        t.detail_of_fraud,
+                        t.date_of_incident,
+                        t.amount_involved,
+                        t.reported_by,
+                        t.product_name,
+                        t.product_code,
+                        t.product_category,
+                        t.risk_class,
+                        t.city,
+                        t.district,
+                        t.state,
+                        t.region,
+                        t.tier,
+                        t.aml_risk_weight,
+                        t.ground_of_suspicion,
+                        t.txn_type_name,
+                        t.txn_category,
+                        t.onboarding_date,          
+
+                        t.gcid,
+
+                        e.entity_id,
+                        e.entity_code,
+                        e.entity_name,
+                        e.entity_type,
+                        e.data_provider_flag,
+                        e.onboarding_date             AS entity_onboarding_date,   
+
+                        p.product_id,
+                        p.product_code                AS master_product_code,       
+                        p.product_name                AS master_product_name,       
+                        p.product_category            AS master_product_category,   
+                        p.sub_category,
+                        p.risk_class                  AS master_risk_class,         
+                        p.created_at,
+
+                        dc.customerid,
+                        current_date()                AS loaded_at
+
+                      FROM customer_transaction t
+                      LEFT JOIN dim_entity_master e
+                        ON t.reported_by = e.entity_code
+                      LEFT JOIN dim_products_master p
+                        ON t.product_name = p.product_name
+                      LEFT JOIN dim_customer dc
+                        ON t.src_customer_unique_id = dc.src_customer_unique_id
+                        
