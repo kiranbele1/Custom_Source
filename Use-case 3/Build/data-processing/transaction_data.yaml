@@ -37,7 +37,7 @@ workflow:
             explain: true
             logLevel: INFO
 
-            inputs:
+            processeds:
               - name: SOFL_data
                 dataset: dataos://usecasedepot:aml/sofl/transactional/processed/?acl=rw
                 format: csv
@@ -58,12 +58,6 @@ workflow:
               - name: customer_transaction_final
                 dataset: dataos://icebase:btsschema/customer_transaction?acl=rw
                 format: iceberg
-                description: Raw fraud transaction data loaded into Iceberg with gcid as NULL.
-                tags:
-                  - Tier.Gold
-                  - Domain.SOFL
-                title: Data Transformations
-
                 options:
                   saveMode: append
                   iceberg:
@@ -77,8 +71,8 @@ workflow:
                     sql: |
                       SELECT *,
                         CAST(NULL AS STRING) AS gcid,
-                        CURRENT_TIMESTAMP AS created_at,
-                        CURRENT_TIMESTAMP AS updated_at
+                        CURRENT_TIMESTAMP    AS created_at,
+                        CURRENT_TIMESTAMP    AS updated_at
                       FROM (
                         SELECT
                           src_customer_unique_id, src_txn_unique_id, name, pan, dob,

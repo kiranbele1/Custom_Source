@@ -1,4 +1,4 @@
-name: soda-fraud-fact-quality
+name: soda-fraud-fact-360-quality
 version: v1
 type: workflow
 tags:
@@ -13,7 +13,7 @@ workflow:
   #   cron: '00 09 * * *'
   #   concurrencyPolicy: Forbid
   dag:
-    - name: soda-fraud-fact-quality
+    - name: soda-fraud-fact-360-quality
       spec:
         stack: soda+python:1.0
         compute: runnable-default
@@ -31,7 +31,7 @@ workflow:
             - dataset: dataos://icebase:btsschema/fact_fraud_data
               options:
                 engine: minerva
-                clusterName: training
+                clusterName: miniature
               profile:
                 columns:
                   - include *
@@ -63,14 +63,14 @@ workflow:
                     attributes:
                       category: Completeness
 
-                # - invalid(mobile_number):
-                #     name: Mobile number must be 10 digits starting with 6-9
-                #     attributes:
-                #       category: Validity
-                #     fail:
-                #       when:
-                #         - regex mismatch:
-                #             mobile_number: ^[6-9][0-9]{9}$
+                - invalid(mobile_number):
+                    name: Mobile number must be 10 digits starting with 6-9
+                    attributes:
+                      category: Validity
+                    fail:
+                      when:
+                        - regex mismatch:
+                            mobile_number: ^[6-9][0-9]{9}$
 
                 - missing_count(dob) = 0:
                     name: Date of birth should not be missing
@@ -82,28 +82,28 @@ workflow:
                     attributes:
                       category: Completeness
 
-                # - invalid(pan):
-                #     name: PAN should be in following format
-                #     attributes:
-                #       category: Validity
-                #     fail:
-                #       when:
-                #         - regex mismatch:
-                #             pan: ^[A-Z]{5}[0-9]{4}[A-Z]$
+                - invalid(pan):
+                    name: PAN should be in following format
+                    attributes:
+                      category: Validity
+                    fail:
+                      when:
+                        - regex mismatch:
+                            pan: ^[A-Z]{5}[0-9]{4}[A-Z]$
 
                 - missing_count(name) = 0:
                     name: Customer name should not be missing
                     attributes:
                       category: Completeness
 
-                # - invalid(pincode):
-                #     name: Pincode must be 6 digits not starting with 0
-                #     attributes:
-                #       category: Validity
-                #     fail:
-                #       when:
-                #         - regex mismatch:
-                #             pincode: ^[1-9][0-9]{5}$
+                - invalid(pincode):
+                    name: Pincode must be 6 digits not starting with 0
+                    attributes:
+                      category: Validity
+                    fail:
+                      when:
+                        - regex mismatch:
+                            pincode: ^[1-9][0-9]{5}$
 
                 - missing_count(entity_code) = 0:
                     name: Entity code should not be missing
@@ -140,53 +140,53 @@ workflow:
                     attributes:
                       category: Completeness
 
-                # - missing_count(amount_involved) = 0:
-                #     name: Amount involved should not be missing
-                #     attributes:
-                #       category: Completeness
+                - missing_count(amount_involved) = 0:
+                    name: Amount involved should not be missing
+                    attributes:
+                      category: Completeness
 
-                # - min(amount_involved) >= 0:
-                #     name: Amount involved should not be negative
-                #     attributes:
-                #       category: Validity
+                - min(amount_involved) >= 0:
+                    name: Amount involved should not be negative
+                    attributes:
+                      category: Validity
 
-                # - max(amount_involved) <= 1000000:
-                #     name: Amount involved should not exceed 1000000
-                #     attributes:
-                #       category: Validity
+                - max(amount_involved) <= 1000000:
+                    name: Amount involved should not exceed 1000000
+                    attributes:
+                      category: Validity
 
-                # - missing_count(date_of_incident) = 0:
-                #     name: Date of incident should not be missing
-                #     attributes:
-                #       category: Completeness
+                - missing_count(date_of_incident) = 0:
+                    name: Date of incident should not be missing
+                    attributes:
+                      category: Completeness
 
-                # - missing_count(src_customer_unique_id) = 0:
-                #     name: Customer ID should not be missing
-                #     attributes:
-                #       category: Completeness
+                - missing_count(src_customer_unique_id) = 0:
+                    name: Customer ID should not be missing
+                    attributes:
+                      category: Completeness
 
-                # - duplicate_count(src_customer_unique_id) = 0:
-                #     name: Customer ID should not be duplicated
-                #     attributes:
-                #       category: Uniqueness
+                - duplicate_count(src_customer_unique_id) = 0:
+                    name: Customer ID should not be duplicated
+                    attributes:
+                      category: Uniqueness
 
-                # - missing_count(src_txn_unique_id) = 0:
-                #     name: Transaction ID should not be missing
-                #     attributes:
-                #       category: Completeness
+                - missing_count(src_txn_unique_id) = 0:
+                    name: Transaction ID should not be missing
+                    attributes:
+                      category: Completeness
 
-                # - duplicate_count(src_txn_unique_id) = 0:
-                #     name: Transaction ID should not be duplicated
-                #     attributes:
-                #       category: Uniqueness
+                - duplicate_count(src_txn_unique_id) = 0:
+                    name: Transaction ID should not be duplicated
+                    attributes:
+                      category: Uniqueness
 
-                # - invalid(email_id):
-                #     name: Custom email format checks
-                #     attributes:
-                #       category: Validity
-                #     fail:
-                #       when:
-                #         any:
-                #           - is null: email_id
-                #           - regex mismatch:
-                #               email_id: ^[a-zA-Z0-9]+([._][a-zA-Z0-9]+)*@[a-zA-Z]+\.[a-zA-Z]{2,}$
+                - invalid(email_id):
+                    name: Custom email format checks
+                    attributes:
+                      category: Validity
+                    fail:
+                      when:
+                        any:
+                          - is null: email_id
+                          - regex mismatch:
+                              email_id: ^[a-zA-Z0-9]+([._][a-zA-Z0-9]+)*@[a-zA-Z]+\.[a-zA-Z]{2,}$

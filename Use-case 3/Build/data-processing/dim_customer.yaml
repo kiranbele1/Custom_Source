@@ -5,7 +5,7 @@ type: workflow
 tags:
   - Tier.Gold
   - fraud
-description: Initial load of dim_customer from customer_transaction.
+description: Initial load of dim_customer from customer_transaction. Run ONCE only.
 
 workflow:
   title: Dim Customer Initial Load
@@ -48,7 +48,6 @@ workflow:
                 tags:
                   - Tier.Gold
                 title: Dim Customer Initial Load
-
                 options:
                   saveMode: overwrite
                   iceberg:
@@ -58,6 +57,26 @@ workflow:
 
             steps:
               - sequence:
+
+                  # Step 1: deduplicate by gcid keeping latest record
+                  # DISTINCT on all columns is wrong because same customer
+                  # can have different src_customer_unique_id across reporters
+                  # ROW_NUMBER PARTITION BY gcid is the correct dedup key
+                  - name: deduped_customers
+                    sql: |
+                      SELECT *
+                      FROM (
+                        SELECT *,
+                          ROW_NUMBER() OVER (
+                            PARTITION BY gcid
+                            ORDER BY created_at DESC
+                          ) AS rn
+                        FROM customer_transaction_input
+                        WHERE gcid IS NOT NULL
+                      )
+                      WHERE rn = 1
+
+                  # Step 2: build final dim_customer with all SCD2 columns
                   - name: dim_customer_final
                     sql: |
                       SELECT
@@ -74,15 +93,4 @@ workflow:
                         'Y'                                 AS is_current,
                         CURRENT_TIMESTAMP                   AS created_at,
                         CURRENT_TIMESTAMP                   AS updated_at
-                      FROM (
-                        SELECT DISTINCT
-                          src_customer_unique_id,
-                          reported_by,
-                          mobile_number,
-                          pan,
-                          dob,
-                          email_id,
-                          gcid
-                        FROM customer_transaction_input
-                        WHERE gcid IS NOT NULL
-                      )
+                      FROM deduped_customers

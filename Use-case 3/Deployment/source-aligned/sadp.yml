@@ -3,8 +3,7 @@ version: v1beta
 type: data
 description: Source-aligned Data Product
 tags:
-  - BTS Onboarding
-  - DPUsecase.customer_data
+  - DPUsecase.fraud_data
   - DPTier.Source Aligned
 v1beta:
   data:
@@ -40,6 +39,5 @@ v1beta:
     outputs:
 
       - refType: dataos
-        ref: dataset:icebase:btsschema:fact_fraud_data
-
+        ref: dataos://icebase:btsschema/fact_fraud_data
         
