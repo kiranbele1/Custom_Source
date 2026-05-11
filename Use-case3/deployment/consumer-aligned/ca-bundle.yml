@@ -8,11 +8,11 @@ layer: "user"
 bundle:
  resources:
     - id: lens
-      file: D:\MDF\Use-Case3\Build\semantic-model\deployment.yaml
-      #file: "Usecase-kiran/build/semantic-model/deployment.yml"
+      #file: D:\MDF\Use-Case3\Build\semantic-model\deployment.yaml
+      file: "Use-case3/build/semantic-model/deployment.yml"
       workspace: public
       
     - id: soda-fraud-fact-quality
-      file: D:\MDF\Use-Case3\Build\slo\output\fact_fraud_quality.yaml
-      #file: "Usecase-kiran/build/slo/output/quality_sales_aggregate.yml"
+      #file: D:\MDF\Use-Case3\Build\slo\output\fact_fraud_quality.yaml
+      file: "Usecase-kiran/build/slo/output/quality_sales_aggregate.yml"
       workspace: public
