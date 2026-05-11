@@ -9,10 +9,10 @@ bundle:
  resources:
     - id: lens
       #file: D:\MDF\Use-Case3\Build\semantic-model\deployment.yaml
-      file: "Use-case3/build/semantic-model/deployment.yml"
+      file: "Custom_Source/Use-case3/build/semantic-model/deployment.yaml"
       workspace: public
       
     - id: soda-fraud-fact-quality
       #file: D:\MDF\Use-Case3\Build\slo\output\fact_fraud_quality.yaml
-      file: "Usecase-kiran/build/slo/output/quality_sales_aggregate.yml"
+      file: "Custom_Source/Use-case3/build/slo/output/fact_fraud_quality.yaml"
       workspace: public
