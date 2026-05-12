@@ -8,7 +8,7 @@ layer: "user"
 bundle:
  resources:
     - id: lens
-      #file: D:\MDF\Use-Case3\Build\semantic-model\deployment.yaml
+      #file: D:\MDF\Use-Case3\Build\semantic-model\deployment.yaml  
       file: "Custom_Source/Use-case3/build/semantic-model/deployment.yaml"
       workspace: public
       
