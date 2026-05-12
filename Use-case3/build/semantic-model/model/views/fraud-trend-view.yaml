@@ -11,7 +11,7 @@ views:
         timezone: "UTC"
         window: "day"
     tables:
-      - join_path: fraud_intel_unified
+      - join_path: fact_fraud_data
         prefix: true
         includes:
           - name

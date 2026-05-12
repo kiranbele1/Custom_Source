@@ -6,11 +6,11 @@ tags:
 description: This bundle resource is for the fraud trend anaysis.
 layer: "user"
 bundle:
- resources:
+  resources:
     - id: lens
-      file: "Custom_Source\Use-case3\build\semantic-model\deployment.yaml"
+      file: "D:\\MDF\\GitRepo\\Custom_Source\\Use-case3\\build\\semantic-model\\deployment.yaml"
       workspace: public
       
     - id: soda-fraud-fact-quality
-      file: "Custom_Source\Use-case3\build\slo\output\fact_fraud_quality.yaml"
+      file: "D:\\MDF\\GitRepo\\Custom_Source\\Use-case3\\build\\slo\\output\\fact_fraud_quality.yaml"
       workspace: public
