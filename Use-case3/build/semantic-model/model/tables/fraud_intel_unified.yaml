@@ -130,7 +130,7 @@ tables:
 
     measures:
       - name: total_str_count
-        sql: "COUNT(incident_id)""
+        sql: "COUNT(incident_id)"
         type: count
         description: Total Fraud incident count.
 

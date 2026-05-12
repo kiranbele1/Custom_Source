@@ -19,10 +19,6 @@ lens:
     lensBaseDir: Custom_Source/Use-case3/build/semantic-model/model
     syncFlags:
       - --ref=main
-  outputs:
-      - refType: dataos
-        ref: dataset:icebase:schema:btsschema
-
   api:   # optional
     replicas: 1 # optional
     logLevel: Info  # optional
