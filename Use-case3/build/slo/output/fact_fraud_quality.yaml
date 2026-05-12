@@ -28,7 +28,7 @@ workflow:
 
         stackSpec:
           inputs:
-            - dataset: dataos://icebase:btsschema/fact_fraud_data
+            - dataset: dataos://icebase:aml/fact_fraud_data
               options:
                 engine: minerva
                 clusterName: training

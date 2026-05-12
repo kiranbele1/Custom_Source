@@ -38,12 +38,12 @@ workflow:
 
             inputs:
               - name: customer_transaction_input
-                dataset: dataos://icebase:btsschema/customer_transaction?acl=rw
+                dataset: dataos://icebase:aml/customer_transaction?acl=rw
                 format: iceberg
 
             outputs:
               - name: dim_customer_final
-                dataset: dataos://icebase:btsschema/dim_customer?acl=rw
+                dataset: dataos://icebase:aml/dim_customer?acl=rw
                 format: iceberg
                 tags:
                   - Tier.Gold

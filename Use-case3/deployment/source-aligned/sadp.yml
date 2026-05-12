@@ -22,22 +22,22 @@ v1beta:
       ref: bundle:v1beta:fraud-bundle
     inputs:
       - refType: dataos
-        ref: dataos://icebase:btsschema/customer_transaction
+        ref: dataos://icebase:aml/customer_transaction
 
       - refType: dataos
-        ref: dataos://icebase:btsschema/dim_entity_master
+        ref: dataos://icebase:aml/dim_entity_master
 
       - refType: dataos
-        ref: dataos://icebase:btsschema/dim_products_master
+        ref: dataos://icebase:aml/dim_products_master
 
       - refType: dataos
-        ref: dataos://icebase:btsschema/dim_customer        
+        ref: dataos://icebase:aml/dim_customer        
 
       - refType: dataos
-        ref: dataos://icebase:btsschema/dim_global_customer            
+        ref: dataos://icebase:aml/dim_global_customer            
 
     outputs:
 
       - refType: dataos
-        ref: dataos://icebase:btsschema/fact_fraud_data
+        ref: dataos://icebase:aml/fact_fraud_data
         

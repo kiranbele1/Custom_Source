@@ -38,20 +38,20 @@ workflow:
 
             inputs:
               - name: customer_transaction_input
-                dataset: dataos://icebase:btsschema/customer_transaction?acl=rw
+                dataset: dataos://icebase:aml/customer_transaction?acl=rw
                 format: iceberg
 
               - name: dim_customer_existing
-                dataset: dataos://icebase:btsschema/dim_customer?acl=rw
+                dataset: dataos://icebase:aml/dim_customer?acl=rw
                 format: iceberg
 
               - name: pipeline_control
-                dataset: dataos://icebase:btsschema/pipeline_control?acl=rw
+                dataset: dataos://icebase:aml/pipeline_control?acl=rw
                 format: iceberg
 
             outputs:
               - name: incoming_customers_deduped
-                dataset: dataos://icebase:btsschema/dim_customer?acl=rw
+                dataset: dataos://icebase:aml/dim_customer?acl=rw
                 format: iceberg
                 options:
                   saveMode: overwrite
@@ -163,20 +163,20 @@ workflow:
 
             inputs:
               - name: customer_transaction_input
-                dataset: dataos://icebase:btsschema/customer_transaction?acl=rw
+                dataset: dataos://icebase:aml/customer_transaction?acl=rw
                 format: iceberg
 
               - name: dim_customer_existing
-                dataset: dataos://icebase:btsschema/dim_customer?acl=rw
+                dataset: dataos://icebase:aml/dim_customer?acl=rw
                 format: iceberg
 
               - name: pipeline_control
-                dataset: dataos://icebase:btsschema/pipeline_control?acl=rw
+                dataset: dataos://icebase:aml/pipeline_control?acl=rw
                 format: iceberg
 
             outputs:
               - name: new_active_rows
-                dataset: dataos://icebase:btsschema/dim_customer?acl=rw
+                dataset: dataos://icebase:aml/dim_customer?acl=rw
                 format: iceberg
                 options:
                   saveMode: append

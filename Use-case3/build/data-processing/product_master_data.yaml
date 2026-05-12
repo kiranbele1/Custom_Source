@@ -38,7 +38,7 @@ workflow:
             logLevel: INFO
             outputs:
               - name: step1
-                dataset: dataos://icebase:btsschema/dim_products_master?acl=rw
+                dataset: dataos://icebase:aml/dim_products_master?acl=rw
                 format: Iceberg
                 description: The dataset contains comprehensive information about business opportunities within the practice domain, including opportunity details, client information, engagement types, and potential revenue. This dataset enables tracking of opportunity progression, performance analysis, and strategic decision-making for practice growth and client relationship management.
                 tags:

@@ -1,5 +1,5 @@
 SELECT
   *
 FROM
-  icebase.btsschema.fact_fraud_data
+  icebase.aml.fact_fraud_data
 LIMIT 50

@@ -38,16 +38,16 @@ workflow:
 
             inputs:
               - name: customer_transaction_input
-                dataset: dataos://icebase:btsschema/customer_transaction?acl=rw
+                dataset: dataos://icebase:aml/customer_transaction?acl=rw
                 format: iceberg
 
               - name: dim_global_customer_input
-                dataset: dataos://icebase:btsschema/dim_global_customer?acl=rw
+                dataset: dataos://icebase:aml/dim_global_customer?acl=rw
                 format: iceberg
 
             outputs:
               - name: customer_transaction_updated
-                dataset: dataos://icebase:btsschema/customer_transaction?acl=rw
+                dataset: dataos://icebase:aml/customer_transaction?acl=rw
                 format: iceberg
                 options:
                   # overwrite + merge confirmed working in DataOS Flare

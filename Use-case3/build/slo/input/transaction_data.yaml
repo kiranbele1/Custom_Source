@@ -27,7 +27,7 @@ workflow:
 
         stackSpec:
           inputs:
-            - dataset: dataos://icebase:btsschema/customer_transaction
+            - dataset: dataos://icebase:aml/customer_transaction
               options:
                 engine: minerva
                 clusterName: training

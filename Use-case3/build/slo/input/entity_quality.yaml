@@ -27,7 +27,7 @@ workflow:
 
         stackSpec:
           inputs:
-            - dataset: dataos://icebase:btsschema/dim_entity_master
+            - dataset: dataos://icebase:aml/dim_entity_master
               options:
                 engine: minerva
                 clusterName: training

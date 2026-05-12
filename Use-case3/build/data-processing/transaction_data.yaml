@@ -56,7 +56,7 @@ workflow:
 
             outputs:
               - name: customer_transaction_final
-                dataset: dataos://icebase:btsschema/customer_transaction?acl=rw
+                dataset: dataos://icebase:aml/customer_transaction?acl=rw
                 format: iceberg
                 options:
                   saveMode: append
