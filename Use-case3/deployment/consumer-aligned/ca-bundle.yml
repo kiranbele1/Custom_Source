@@ -8,5 +8,5 @@ layer: "user"
 bundle:
   resources:
     - id: lens
-      file: "/Users/paragkadam/Documents/Use-Case3/Build/semantic-model/deployment.yaml"
+      file: "/Users/paragkadam/Documents/Custom_Source/Use-case3/build/semantic-model/deployment.yaml"
       workspace: public
