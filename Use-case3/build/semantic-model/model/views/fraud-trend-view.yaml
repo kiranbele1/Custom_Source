@@ -1,9 +1,9 @@
 views:
-  - name: fraud-trend-view
+  - name: fraud_trend_view
     description: This metric calculate fraud trend area wise analysis.
     meta:
       title: Fraud Trend 
-      tags:   
+      tags:
         - DPDomain.Fraud Intelligence
         - DPUsecase.Group company awareness
       metric:
@@ -11,11 +11,11 @@ views:
         timezone: "UTC"
         window: "day"
     tables:
-      - join_path: fraud_intel_unified
+      - join_path: fact_fraud_data
         prefix: true
         includes:
           - name
-          - pan
+          - customer_pan
           - dob
           - mobile_number
           - fraud_category
@@ -23,4 +23,3 @@ views:
           - amount_involved
           - product_code
           - product_category
-          

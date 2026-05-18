@@ -8,9 +8,10 @@ layer: "user"
 bundle:
   resources:
     - id: lens
-      file: "D:\\MDF\\GitRepo\\Custom_Source\\Use-case3\\build\\semantic-model\\deployment.yaml"
+      file: "/Users/paragkadam/Documents/Use-Case3/Build/semantic-model/deployment.yaml"
       workspace: public
       
     - id: soda-fraud-fact-quality
       file: "D:\\MDF\\GitRepo\\Custom_Source\\Use-case3\\build\\slo\\output\\fact_fraud_quality.yaml"
       workspace: public
+    

@@ -7,16 +7,17 @@ tags:
 description: This semantic model provides comprehensive insights for sales360 analysis.
 lens:
   compute: runnable-default
+  # Source Configuration - Connect to Iceberg via Minerva
   # secrets:
   #   - name: bitbucket-sv
   #     allKeys: true
   source:
     type: minerva
-    name: training
+    name: system
     catalog: icebase
   repo:
     url: https://github.com/kiranbele1/Custom_Source
-    lensBaseDir: Custom_Source/Use-case3/build/semantic-model/model
+    lensBaseDir: Use-case3\build\semantic-model\model
     syncFlags:
       - --ref=main
   api:   # optional

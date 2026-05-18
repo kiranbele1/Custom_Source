@@ -5,10 +5,108 @@ tags:
   - dataproduct
   - fraud360
   - azure
-description: Bundle for fraud 360 demo with depot, scanner, flare, and soda
+description: Bundle for fraud 360 demo — runs all flare pipelines then quality checks daily
 layer: user
 
 bundle:
+  schedule:
+    initialState: create
+    timezone: Asia/Kolkata
+    create:
+      cron: '0 9 * * *'   
+
   resources:
-    - id: fact_fraud_data
+    # STEP 1 — Ingest raw CSV into customer_transaction
+    - id: wf-frauddata-ingestion
+      workspace: public
+      file: /Users/paragkadam/Documents/Use-Case3/Build/data-processing/transaction_data.yaml
+
+    # STEP 2 — Generate gcid into dim_global_customer
+    - id: wf-sog-gcid-resolution
+      workspace: public
+      file: /Users/paragkadam/Documents/Use-Case3/Build/data-processing/dim_global_customer.yaml
+      dependencies:
+        - wf-frauddata-ingestion
+      dependencyConditions:
+        - resourceId: wf-frauddata-ingestion
+          status:
+            is:
+              - active
+          runtime:
+            is:
+              - succeeded
+
+    # STEP 3 — Backfill gcid into customer_transaction
+    - id: wf-update-gcid
+      workspace: public
+      file: /Users/paragkadam/Documents/Use-Case3/Build/data-processing/update_gcid_customer.yaml
+      dependencies:
+        - wf-sog-gcid-resolution
+      dependencyConditions:
+        - resourceId: wf-sog-gcid-resolution
+          status:
+            is:
+              - active
+          runtime:
+            is:
+              - succeeded
+
+    # STEP 4 — SCD2 merge into dim_customer
+    - id: wf-dim-customer-scd2
+      workspace: public
+      file: /Users/paragkadam/Documents/Use-Case3/Build/data-processing/dim_customer_scd.yaml
+      dependencies:
+        - wf-update-gcid
+      dependencyConditions:
+        - resourceId: wf-update-gcid
+          status:
+            is:
+              - active
+          runtime:
+            is:
+              - succeeded
+
+    # STEP 5 — Build fact_fraud_data
+    - id: fact-fraud-data
+      workspace: public
       file: /Users/paragkadam/Documents/Use-Case3/Build/data-processing/fact_fraud_data.yaml
+      dependencies:
+        - wf-dim-customer-scd2
+      dependencyConditions:
+        - resourceId: wf-dim-customer-scd2
+          status:
+            is:
+              - active
+          runtime:
+            is:
+              - succeeded
+
+    # # STEP 6 — Update pipeline_control watermark
+    # - id: wf-pipeline-control
+    #   workspace: public
+    #   file: /Users/paragkadam/Documents/Use-Case3/Build/data-processing/pipeline_control.yaml
+    #   dependencies:
+    #     - fact-fraud-data
+    #   dependencyConditions:
+    #     - resourceId: fact-fraud-data
+    #       status:
+    #         is:
+    #           - active
+    #       runtime:
+    #         is:
+    #           - succeeded
+
+    # STEP 7 — Run Soda quality checks on fact_fraud_data
+    - id: soda-fraud-fact-quality
+      workspace: public
+      file: /Users/paragkadam/Documents/Use-Case3/Build/slo/output/fact_fraud_quality_check.yaml
+      dependencies:
+        - fact-fraud-data
+      dependencyConditions:
+        - resourceId: fact-fraud-data
+          status:
+            is:
+              - active
+          runtime:
+            is:
+              - succeeded

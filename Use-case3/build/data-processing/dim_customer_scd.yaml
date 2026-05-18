@@ -11,7 +11,6 @@ workflow:
   title: Dim Customer SCD2 Daily
 
   dag:
-    # ── JOB 1: Close matched existing active rows via MERGE ──────────────────
     - name: job-close-existing-rows
       title: Close Existing Active Rows
 
@@ -41,10 +40,6 @@ workflow:
                 dataset: dataos://icebase:aml/customer_transaction?acl=rw
                 format: iceberg
 
-              - name: dim_customer_existing
-                dataset: dataos://icebase:aml/dim_customer?acl=rw
-                format: iceberg
-
               - name: pipeline_control
                 dataset: dataos://icebase:aml/pipeline_control?acl=rw
                 format: iceberg
@@ -54,17 +49,15 @@ workflow:
                 dataset: dataos://icebase:aml/dim_customer?acl=rw
                 format: iceberg
                 options:
-                  saveMode: overwrite
-                  merge:
-                    onClause: >
-                      old.src_customer_unique_id = new.src_customer_unique_id
-                      OR old.gcid = new.gcid
-                    whenClause: >
-                      MATCHED AND old.is_current = 'Y' THEN UPDATE SET
-                      old.effective_to = new.effective_to,
-                      old.is_current = new.is_current,
-                      old.updated_at = new.updated_at
+                  saveMode: append
                   iceberg:
+                    merge:
+                      onClause: "old.gcid = new.gcid"
+                      whenClause: >
+                        MATCHED AND old.is_current = 'Y' THEN UPDATE SET
+                        effective_to = new.effective_to,
+                        is_current = new.is_current,
+                        updated_at = new.updated_at
                     properties:
                       write.format.default: parquet
                       write.metadata.compression-codec: snappy
@@ -72,13 +65,11 @@ workflow:
             steps:
               - sequence:
 
-                  # Step 1: get watermark
                   - name: watermark
                     sql: |
-                      SELECT MIN(latest_date) AS watermark_ts
+                      SELECT MAX(latest_date) AS watermark_ts
                       FROM pipeline_control
 
-                  # Step 2: deduplicate incoming - one row per customer
                   - name: ranked_customers
                     sql: |
                       SELECT *,
@@ -88,53 +79,25 @@ workflow:
                         ) AS rn
                       FROM customer_transaction_input ct
                       CROSS JOIN watermark w
-                      WHERE ct.gcid       IS NOT NULL
-                        AND ct.created_at  > w.watermark_ts
-
-                  # Step 3: build close-row payload
-                  # join with dim_customer_existing to get ALL columns
-                  # including customerid, effective_from, created_at
-                  # which are required by dim_customer table schema
-                  # without this join the job fails with
-                  # CANNOT_FIND_DATA for customerid — proven in testing
-                  - name: incoming_deduped
-                    sql: |
-                      SELECT
-                        src_customer_unique_id,
-                        reported_by,
-                        mobile_number AS mobile,
-                        pan,
-                        dob,
-                        email_id      AS email,
-                        gcid
-                      FROM ranked_customers
-                      WHERE rn = 1
+                      WHERE ct.gcid IS NOT NULL
+                        AND ct.created_at > w.watermark_ts
 
                   - name: incoming_customers_deduped
                     sql: |
                       SELECT
-                        d.customerid,
-                        i.src_customer_unique_id,
-                        i.reported_by,
-                        i.mobile,
-                        i.pan,
-                        i.dob,
-                        i.email,
-                        i.gcid,
-                        d.effective_from,
-                        current_date()    AS effective_to,
-                        'N'               AS is_current,
-                        d.created_at,
-                        CURRENT_TIMESTAMP AS updated_at
-                      FROM incoming_deduped i
-                      INNER JOIN dim_customer_existing d
-                        ON (
-                          i.src_customer_unique_id = d.src_customer_unique_id
-                          OR i.gcid = d.gcid
-                        )
-                      WHERE d.is_current = 'Y'
+                        src_customer_unique_id,
+                        reported_by,
+                        mobile_number         AS mobile,
+                        pan,
+                        dob,
+                        email_id              AS email,
+                        gcid,
+                        current_date()        AS effective_to,
+                        'N'                   AS is_current,
+                        CURRENT_TIMESTAMP     AS updated_at
+                      FROM ranked_customers
+                      WHERE rn = 1
 
-    # ── JOB 2: Insert new active rows via APPEND ─────────────────────────────
     - name: job-insert-new-rows
       title: Insert New Active Rows
       dependencies:
@@ -188,13 +151,11 @@ workflow:
             steps:
               - sequence:
 
-                  # Step 1: get watermark
                   - name: watermark
                     sql: |
-                      SELECT MIN(latest_date) AS watermark_ts
+                      SELECT MAX(latest_date) AS watermark_ts
                       FROM pipeline_control
 
-                  # Step 2: deduplicate incoming
                   - name: ranked_customers
                     sql: |
                       SELECT *,
@@ -204,8 +165,8 @@ workflow:
                         ) AS rn
                       FROM customer_transaction_input ct
                       CROSS JOIN watermark w
-                      WHERE ct.gcid       IS NOT NULL
-                        AND ct.created_at  > w.watermark_ts
+                      WHERE ct.gcid IS NOT NULL
+                        AND ct.created_at > w.watermark_ts
 
                   - name: incoming_customers
                     sql: |
@@ -220,30 +181,22 @@ workflow:
                       FROM ranked_customers
                       WHERE rn = 1
 
-                  # Step 3: get current max customerid to continue sequence
                   - name: max_customer_id
                     sql: |
                       SELECT COALESCE(MAX(customerid), 0) AS max_id
                       FROM dim_customer_existing
 
-                  # Step 4: find truly new customers only
-                  # LEFT JOIN on is_current = Y only — so customers just
-                  # closed by Job 1 (now is_current = N) do not block
-                  # insertion of their new active row
                   - name: truly_new_customers
                     sql: |
                       SELECT i.*
                       FROM incoming_customers i
                       LEFT JOIN dim_customer_existing d
                         ON (
-                          i.src_customer_unique_id = d.src_customer_unique_id
-                          OR i.gcid = d.gcid
+                          i.gcid = d.gcid
                         )
                         AND d.is_current = 'Y'
                       WHERE d.customerid IS NULL
 
-                  # Step 5: assign new customerid continuing from max existing
-                  # CROSS JOIN on single-row max_customer_id is safe
                   - name: new_active_rows
                     sql: |
                       SELECT
@@ -262,3 +215,4 @@ workflow:
                         CURRENT_TIMESTAMP               AS updated_at
                       FROM truly_new_customers i
                       CROSS JOIN max_customer_id m
+                      

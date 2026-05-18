@@ -35,23 +35,23 @@ workflow:
 
           job:
             explain: true
-            logLevel: INFO
+            logLevel: INFO  
 
-            processeds:
+            inputs:
               - name: SOFL_data
-                dataset: dataos://usecasedepot:aml/sofl/transactional/processed/?acl=rw
+                dataset: dataos://usecasedepot:aml/sofl/transactional/input/?acl=rw
                 format: csv
 
               - name: SOHFL_data
-                dataset: dataos://usecasedepot:aml/sohfl/transactional/processed/?acl=rw
+                dataset: dataos://usecasedepot:aml/sohfl/transactional/input/?acl=rw
                 format: csv
 
               - name: SOSLAMC_data
-                dataset: dataos://usecasedepot:aml/soslamc/transactional/processed/?acl=rw
+                dataset: dataos://usecasedepot:aml/soslamc/transactional/input/?acl=rw
                 format: csv
 
               - name: SOSLI_data
-                dataset: dataos://usecasedepot:aml/sosli/transactional/processed/?acl=rw
+                dataset: dataos://usecasedepot:aml/sosli/transactional/input/?acl=rw
                 format: csv
 
             outputs:
@@ -80,7 +80,11 @@ workflow:
                           detail_of_fraud, date_of_incident, amount_involved, reported_by,
                           product_name, product_code, product_category, risk_class, city,
                           district, state, region, tier, aml_risk_weight,
-                          ground_of_suspicion, txn_type_name, txn_category, onboarding_date
+                          ground_of_suspicion, txn_type_name, txn_category, onboarding_date,
+                          regexp_replace(
+                            regexp_extract(input_file_name(), '[^/]+$', 0),
+                            '\\.csv$', ''
+                          ) AS source_file_name
                         FROM SOFL_data
 
                         UNION ALL
@@ -91,7 +95,11 @@ workflow:
                           detail_of_fraud, date_of_incident, amount_involved, reported_by,
                           product_name, product_code, product_category, risk_class, city,
                           district, state, region, tier, aml_risk_weight,
-                          ground_of_suspicion, txn_type_name, txn_category, onboarding_date
+                          ground_of_suspicion, txn_type_name, txn_category, onboarding_date,
+                          regexp_replace(
+                            regexp_extract(input_file_name(), '[^/]+$', 0),
+                            '\\.csv$', ''
+                          ) AS source_file_name
                         FROM SOHFL_data
 
                         UNION ALL
@@ -102,7 +110,11 @@ workflow:
                           detail_of_fraud, date_of_incident, amount_involved, reported_by,
                           product_name, product_code, product_category, risk_class, city,
                           district, state, region, tier, aml_risk_weight,
-                          ground_of_suspicion, txn_type_name, txn_category, onboarding_date
+                          ground_of_suspicion, txn_type_name, txn_category, onboarding_date,
+                          regexp_replace(
+                            regexp_extract(input_file_name(), '[^/]+$', 0),
+                            '\\.csv$', ''
+                          ) AS source_file_name
                         FROM SOSLAMC_data
 
                         UNION ALL
@@ -113,6 +125,11 @@ workflow:
                           detail_of_fraud, date_of_incident, amount_involved, reported_by,
                           product_name, product_code, product_category, risk_class, city,
                           district, state, region, tier, aml_risk_weight,
-                          ground_of_suspicion, txn_type_name, txn_category, onboarding_date
+                          ground_of_suspicion, txn_type_name, txn_category, onboarding_date,
+                          regexp_replace(
+                            regexp_extract(input_file_name(), '[^/]+$', 0),
+                            '\\.csv$', ''
+                          ) AS source_file_name
                         FROM SOSLI_data
                       )
+                      

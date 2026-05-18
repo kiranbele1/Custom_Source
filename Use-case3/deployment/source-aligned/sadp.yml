@@ -1,14 +1,15 @@
-name: fact-fraud-data
+name: aml-fact-fraud-data
 version: v1beta
 type: data
 description: Source-aligned Data Product
 tags:
-  - DPUsecase.fraud_data
+  - BTS Onboarding
+  - DPUsecase.customer_data
   - DPTier.Source Aligned
 v1beta:
   data:
     meta:
-      title: fraud Data - BTS
+      title: AMLfraudData - BTS
     collaborators:
       - name: paragkadam
         description: owner
@@ -40,4 +41,3 @@ v1beta:
 
       - refType: dataos
         ref: dataos://icebase:aml/fact_fraud_data
-        

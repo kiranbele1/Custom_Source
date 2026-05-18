@@ -26,7 +26,7 @@ v1beta:
         ref: dataos://icebase:aml/fact_fraud_data
     outputs:
       - refType: dataos
-        ref: dataos://icebase:aml/fraud-trend-view   # Verify the Depot name for your training instance
+        ref: dataos://icebase:aml/fraud-trend-view
 
     ports:
       lens:

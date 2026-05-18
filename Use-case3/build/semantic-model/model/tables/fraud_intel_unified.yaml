@@ -47,7 +47,7 @@ tables:
 
       - name: mobile_number
         description: mobile number of customer
-        type: number
+        type: string
         sql: mobile_number
 
       - name: nationality
@@ -57,18 +57,18 @@ tables:
 
       - name: dob
         description: DOB of customer
-        type: number
-        sql: dob        
+        type: string
+        sql: dob
 
       - name: current_address_pincode
         description: Current Address pin code of customer
-        type: number
+        type: string
         sql: current_address_pincode
         public: true
 
       - name: permanent_address_pincode
         description: Permanent Address pin code of customer
-        type: number
+        type: string
         sql: permanent_address_pincode
 
       - name: product_id
@@ -114,43 +114,69 @@ tables:
       - name: aml_risk_weight
         description: AML risk weight
         type: number
-        sql: aml_risk_weight  
+        sql: "CAST(aml_risk_weight AS DOUBLE)"
+
+      - name: fraud_category
+        description: Category of fraud
+        type: string
+        sql: fraud_category
+
+      - name: detail_of_fraud
+        description: Detail description of the fraud
+        type: string
+        sql: detail_of_fraud
+
+      - name: amount_involved
+        description: Amount involved in the fraud
+        type: number
+        sql: "CAST(amount_involved AS DOUBLE)"
+
+      - name: product_code
+        description: Code of the product
+        type: string
+        sql: product_code
+
+      - name: region
+        description: Region of the fraud incident
+        type: string
+        sql: region
+
     segments:
       - name: fraud_category_filter
-        sql: "{TABLE.fraud_category} = {fraud_category}"
+        sql: "{TABLE}.fraud_category = '{fraud_category}'"
         description: Filters records by a selected fraud category.
 
       - name: region_filter
-        sql: "{TABLE.region} = {region}"
+        sql: "{TABLE}.region = '{region}'"
         description: Filters records by the selected region.
 
       - name: entity_type_filter
-        sql: "{TABLE.entity_type} = {entity_type}"
+        sql: "{TABLE}.entity_type = '{entity_type}'"
         description: Filters records by the selected entity type.
 
     measures:
       - name: total_str_count
-        sql: "COUNT(incident_id)"
+        sql: incident_id
         type: count
         description: Total Fraud incident count.
 
       - name: total_fraud_event_count
-        sql: "COUNT(fraud_event_id)"
+        sql: fraud_event_id
         type: count
         description: Total Fraud event count.
 
       - name: total_exposure_amt_in_lakh
-        sql: "SUM(amount_involved)"
+        sql: "CAST(amount_involved AS DOUBLE)"
         type: sum
         description: Total amount exposed in lakh
 
       - name: avg_fraud_ticket_size
-        sql: "SUM(amount_involved) / COUNT(fraud_event_id)"
+        sql: "{total_exposure_amt_in_lakh} / NULLIF({total_fraud_event_count}, 0)"
         type: number
-        description: Aveage Fraud ticket size
+        description: Average Fraud ticket size
 
       - name: fraud_rate_pct
-        sql: "COUNT(fraud_event_id) / total_str_count * 100 "
+        sql: "{total_fraud_event_count} / NULLIF({total_str_count}, 0) * 100"
         type: number
         description: Fraud rate percentages
 
@@ -170,8 +196,6 @@ tables:
         description: Percentage of customers with more than one order.
 
       - name: high_risk_region_count
-        sql: "COUNT(DISTINCT dimension_value WHERE risk_tier = 'High')"
+        sql: "COUNT(DISTINCT CASE WHEN risk_tier = 'High' THEN dimension_value END)"
         type: number
         description: Percentage of leads converted into orders.
-
-      
