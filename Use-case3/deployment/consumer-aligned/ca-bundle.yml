@@ -10,7 +10,3 @@ bundle:
     - id: lens
       file: "/Users/paragkadam/Documents/Use-Case3/Build/semantic-model/deployment.yaml"
       workspace: public
-
-    - id: soda-fraud-fact-quality
-      file: "/Users/paragkadam/Documents/Use-Case3/Use-case3/build/slo/output/fact_fraud_quality_check.yaml"
-      workspace: public
