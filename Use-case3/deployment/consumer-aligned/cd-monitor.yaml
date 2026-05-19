@@ -17,6 +17,9 @@ monitor:
       - valueJqFilter: .items[] | select(.name == "wf-fraud-risk-recommendations" or .name == "wf-fraud-customer-profile" or .name == "soda-fraud-fact-360-quality" or .name == "scan-fraud-factdata-product") | .status.runTime
         operator: equals
         value: failed
+    valueComparison:
+      operator: greaterThanEqualTo
+      value: 1
     incidentDetails:
       name: fraud-workflow-failure
       severity: high
