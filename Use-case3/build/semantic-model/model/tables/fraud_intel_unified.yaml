@@ -154,6 +154,14 @@ tables:
         sql: "{TABLE}.entity_type = '{entity_type}'"
         description: Filters records by the selected entity type.
 
+      - name: high_risk
+        sql: "{TABLE}.risk_class = 'High'"
+        description: Filters high risk records.
+
+      - name: north_region
+        sql: "{TABLE}.region = 'North'"
+        description: Filters North region records.
+
     measures:
       - name: total_str_count
         sql: incident_id
@@ -180,22 +188,22 @@ tables:
         type: number
         description: Fraud rate percentages
 
-      - name: str_filing_timeliness_pct
-        sql: "SUM(revenue) / COUNT(DISTINCT order_id)"
-        type: number
-        description: Average revenue per order.
+      # - name: str_filing_timeliness_pct
+      #   sql: "SUM(revenue) / COUNT(DISTINCT order_id)"
+      #   type: number
+      #   description: Average revenue per order.
 
-      - name: consent_compliance_rate_pct
-        sql: "SUM(revenue) / COUNT(DISTINCT customer_id)"
-        type: number
-        description: Average revenue per unique customer.
+      # - name: consent_compliance_rate_pct
+      #   sql: "SUM(revenue) / COUNT(DISTINCT customer_id)"
+      #   type: number
+      #   description: Average revenue per unique customer.
 
-      - name: region_risk_index
-        sql: "(COUNT(DISTINCT CASE WHEN order_count > 1 THEN customer_id END) / COUNT(DISTINCT customer_id)) * 100"
-        type: number
-        description: Percentage of customers with more than one order.
+      # - name: region_risk_index
+      #   sql: "(COUNT(DISTINCT CASE WHEN order_count > 1 THEN customer_id END) / COUNT(DISTINCT customer_id)) * 100"
+      #   type: number
+      #   description: Percentage of customers with more than one order.
 
-      - name: high_risk_region_count
-        sql: "COUNT(DISTINCT CASE WHEN risk_tier = 'High' THEN dimension_value END)"
-        type: number
-        description: Percentage of leads converted into orders.
+      # - name: high_risk_region_count
+      #   sql: "COUNT(DISTINCT CASE WHEN risk_tier = 'High' THEN dimension_value END)"
+      #   type: number
+      #   description: Percentage of leads converted into orders.
