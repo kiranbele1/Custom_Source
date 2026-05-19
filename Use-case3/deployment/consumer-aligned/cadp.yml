@@ -26,7 +26,10 @@ v1beta:
         ref: dataos://icebase:aml/fact_fraud_data
     outputs:
       - refType: dataos
-        ref: dataos://icebase:aml/fraud-trend-view
+        ref: dataos://icebase:aml/fraud_risk_recommendations
+
+      - refType: dataos
+        ref: dataos://icebase:aml/fraud_customer_profile
 
     ports:
       lens:

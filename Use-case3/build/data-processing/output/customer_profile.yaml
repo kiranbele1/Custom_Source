@@ -1,0 +1,90 @@
+version: v1
+name: wf-fraud-customer-profile
+type: workflow
+tags:
+  - aml
+description: Customer fraud profile with transaction and geographic insights.
+workflow:
+  dag:
+    - name: dg-fraud-customer-profile
+      description: Build customer fraud profile with transaction behavior and geographic segmentation.
+      spec:
+        tags:
+          - aml
+        stack: flare:7.0
+        compute: runnable-default
+        stackSpec:
+          driver:
+            coreLimit: 2000m
+            cores: 1
+            memory: 1000m
+          executor:
+            coreLimit: 2000m
+            cores: 1
+            instances: 1
+            memory: 2000m
+          job:
+            explain: true
+            logLevel: INFO
+            inputs:
+              - name: fraud_data
+                dataset: dataos://icebase:aml/fact_fraud_data?acl=r
+                format: Iceberg
+            steps:
+              - sequence:
+                  - name: final
+                    sql: >
+                      SELECT
+                        fraud_event_id,
+                        name,
+                        pan,
+                        mobile_number,
+                        city,
+                        state,
+                        region,
+                        tier,
+                        fraud_category,
+                        product_category,
+                        txn_category,
+                        txn_type_name,
+                        risk_class,
+                        CAST(amount_involved AS DOUBLE) AS amount_involved,
+                        CAST(aml_risk_weight AS DOUBLE) AS aml_risk_weight,
+
+                        CASE
+                          WHEN tier = 'Metro'  THEN 'High Exposure Zone'
+                          WHEN tier = 'Tier-2' THEN 'Moderate Exposure Zone'
+                          ELSE                      'Low Exposure Zone'
+                        END AS geographic_risk_zone,
+
+                        CASE
+                          WHEN txn_category = 'Loan'       THEN 'Credit Risk'
+                          WHEN txn_category = 'Insurance'  THEN 'Claim Risk'
+                          WHEN txn_category = 'Investment' THEN 'Portfolio Risk'
+                          ELSE                                  'General Risk'
+                        END AS transaction_risk_type,
+
+                        CASE
+                          WHEN CAST(amount_involved AS DOUBLE) > 50000 THEN 'Large Exposure'
+                          WHEN CAST(amount_involved AS DOUBLE) > 10000 THEN 'Medium Exposure'
+                          ELSE                                               'Small Exposure'
+                        END AS exposure_bucket,
+
+                        CASE
+                          WHEN ground_of_suspicion = 'Mismatch KYC data'       THEN 'KYC Alert'
+                          WHEN ground_of_suspicion = 'Transaction velocity'     THEN 'Velocity Alert'
+                          WHEN ground_of_suspicion = 'Multiple failed attempts' THEN 'Access Alert'
+                          ELSE                                                        'General Alert'
+                        END AS alert_type
+
+                      FROM fraud_data
+            outputs:
+              - name: final
+                dataset: dataos://icebase:aml/fraud_customer_profile?acl=rw
+                format: Iceberg
+                options:
+                  saveMode: overwrite
+                  iceberg:
+                    properties:
+                      write.format.default: parquet
+                      write.metadata.compression-codec: gzip

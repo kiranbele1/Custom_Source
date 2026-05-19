@@ -4,56 +4,54 @@ layer: user
 type: lens
 tags:
   - lens
-description: This semantic model provides comprehensive insights for sales360 analysis.
+description: Fraud trend analysis semantic model.
 lens:
   compute: runnable-default
-  # Source Configuration - Connect to Iceberg via Minerva
-  # secrets:
-  #   - name: bitbucket-sv
-  #     allKeys: true
   source:
     type: minerva
-    name: system
+    name: training       
     catalog: icebase
   repo:
     url: https://github.com/kiranbele1/Custom_Source
     lensBaseDir: Custom_Source/Use-case3/build/semantic-model/model
     syncFlags:
       - --ref=main
-  api:   # optional
-    replicas: 1 # optional
-    logLevel: Info  # optional
-    # envs:
-    #   LENS2_SCHEDULED_REFRESH_TIMEZONES: "UTC,America/Vancouver,America/Toronto"
-    resources: # optional
+  api:
+    replicas: 1
+    logLevel: Info
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi     
+      limits:
+        cpu: 256m
+        memory: 256Mi
+  worker:
+    replicas: 1
+    logLevel: Info
+    resources:
       requests:
         cpu: 100m
         memory: 256Mi
       limits:
         cpu: 256m
         memory: 256Mi
-  worker: # optional
-    replicas: 1 # optional
-    logLevel: Info  # optional
-    # envs:
-    #   LENS2_SCHEDULED_REFRESH_TIMEZONES: "UTC,America/Vancouver,America/Toronto"
-    resources: # optional
+  router:
+    logLevel: info
+    resources:
       requests:
         cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 256m
-        memory: 256Mi
-  router: # optional
-    logLevel: info  # optional
-    # envs:
-    #   LENS2_SCHEDULED_REFRESH_TIMEZONES: "UTC,America/Vancouver,America/Toronto"
-    resources: # optional
-      requests:
-        cpu: 100m
-        memory: 256Mi
+        memory: 256Mi  
       limits:
         cpu: 256m
         memory: 256Mi
   metric:
     logLevel: info
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi

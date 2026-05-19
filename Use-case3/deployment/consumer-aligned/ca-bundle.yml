@@ -2,11 +2,11 @@ name: fraud-trend-analysis-bundle-kb
 version: v1beta
 type: bundle
 tags:
-- dataproduct
-description: This bundle resource is for the fraud trend anaysis.
+  - dataproduct
+description: This bundle resource is for the fraud trend analysis.
 layer: "user"
 bundle:
   resources:
     - id: lens
-      file: "/Users/paragkadam/Documents/Custom_Source/Use-case3/build/semantic-model/deployment.yaml"
+      file: /Users/paragkadam/Documents/Custom_Source/Use-case3/build/semantic-model/deployment.yaml
       workspace: public

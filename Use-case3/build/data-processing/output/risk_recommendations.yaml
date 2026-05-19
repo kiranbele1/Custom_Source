@@ -1,0 +1,67 @@
+version: v1
+name: wf-fraud-risk-recommendations
+type: workflow
+tags:
+  - aml
+description: Fraud risk segmentation and action recommendations.
+workflow:
+  dag:
+    - name: dg-fraud-risk-data
+      description: Classify fraud incidents and assign action recommendations.
+      spec:
+        tags:
+          - aml
+        stack: flare:7.0
+        compute: runnable-default
+        stackSpec:
+          driver:
+            coreLimit: 2000m
+            cores: 1
+            memory: 1000m
+          executor:
+            coreLimit: 2000m
+            cores: 1
+            instances: 1
+            memory: 2000m
+          job:
+            explain: true
+            logLevel: INFO
+            inputs:
+              - name: fraud_data
+                dataset: dataos://icebase:aml/fact_fraud_data?acl=r
+                format: Iceberg
+            steps:
+              - sequence:
+                  - name: final
+                    sql: >
+                      SELECT
+                        fraud_event_id,
+                        entity_name,
+                        entity_type,
+                        fraud_category,
+                        product_category,
+                        risk_class,
+                        region,
+                        CAST(amount_involved AS DOUBLE) AS amount_involved,
+                        CASE
+                          WHEN risk_class = 'High'   THEN 'Immediate Action - Freeze & Escalate'
+                          WHEN risk_class = 'Medium' THEN 'Review Within 48 Hours'
+                          ELSE                            'Routine Monitoring'
+                        END AS investigation_priority,
+                        CASE
+                          WHEN fraud_category = 'Impersonation'               THEN 'Re-verify KYC + Cross-check Aadhaar & PAN'
+                          WHEN fraud_category = 'Misrepresentation of facts'  THEN 'Request Supporting Docs + Enhanced Due Diligence'
+                          WHEN fraud_category = 'Fabrication of documents'    THEN 'Legal Hold + File STR'
+                          ELSE                                                      'Assign to Fraud Analyst Queue'
+                        END AS recommended_action
+                      FROM fraud_data
+            outputs:
+              - name: final
+                dataset: dataos://icebase:aml/fraud_risk_recommendations?acl=rw
+                format: Iceberg
+                options:
+                  saveMode: overwrite
+                  iceberg:
+                    properties:
+                      write.format.default: parquet
+                      write.metadata.compression-codec: gzip
