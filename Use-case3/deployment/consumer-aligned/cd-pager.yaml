@@ -1,0 +1,20 @@
+name: fraud-pager-parag
+version: v1alpha
+type: pager
+tags:
+  - fraud
+  - pager
+description: Sends alerts only for fraud project workflow failures.
+workspace: public
+pager:
+  conditions:
+    - valueJqFilter: .severity
+      operator: equals
+      value: high
+    - valueJqFilter: .name
+      operator: equals
+      value: fraud-workflow-failure    # ← matches exactly what monitor sets
+  output:
+    email:
+      emailTargets:
+        - paragkadam588@gmail.com

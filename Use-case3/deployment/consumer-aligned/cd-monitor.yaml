@@ -1,0 +1,25 @@
+name: fraud-monitor
+version: v1alpha
+type: monitor
+tags:
+  - fraud
+  - monitor
+description: Monitors fraud project workflows for runtime failures.
+workspace: public
+monitor:
+  schedule: '0 * * * *'
+  type: report_monitor
+  report:
+    source:
+      dataOsInstance:
+        path: /poros/api/v1/workspaces/public/resources/workflow
+    conditions:
+      - valueJqFilter: .items[] | select(.name == "wf-fraud-risk-recommendations" or .name == "wf-fraud-customer-profile" or .name == "soda-fraud-fact-360-quality" or .name == "scan-fraud-factdata-product") | .status.runTime
+        operator: equals
+        value: failed
+    incidentDetails:
+      name: fraud-workflow-failure
+      severity: high
+      description: "A fraud project workflow has failed. Immediate action required."
+      properties:
+        workspace: public
