@@ -1,26 +1,35 @@
 name: fraud-monitor
 version: v1alpha
 type: monitor
+layer: user
 tags:
   - fraud
   - monitor
-description: Monitors fraud project workflows for runtime failures.
-layer: user
+description: Monitors fraud data product metrics via btsfraudtrend lens.
 workspace: public
 monitor:
-  schedule: '0 * * * *'
-  type: report_monitor
+  schedule: '0 * * * *'        # every 1 hour
+  type: equation_monitor
+  equation:
+    leftExpression:
+      queryCoefficient: 1
+      queryConstant: 0
+      query:
+        type: lens
+        lens:
+          dataOsInstance:
+            name: btsfraudtrend      # lens name
+            workspace: public
+            sslmode: 'disable'
+          ql: SELECT total_fraud_event_count FROM fraud_intel_unified
+          comparisonColumn: { name: total_fraud_event_count, dataType: int64 }
+    rightExpression:
+      queryCoefficient: 0
+      queryConstant: 0             # alert if fraud count drops to 0
+    operator: less_than_equals
   incident:
     name: fraud-workflow-failure
     severity: high
-    incidentType: workflowruntime
-  report:
-    source:
-      dataOsInstance:
-        path: /collated/api/v1/reports/resources/runtime?id=workflow:v1:wf-fraud-risk-recommendations:public
-    conditions:
-      - valueComparison:
-          observationType: runtime
-          valueJqFilter: '.value'
-          operator: equals
-          value: failed
+    incidentType: business-metric
+    category: equation
+    description: "Fraud event count has dropped to 0 — possible data pipeline failure."

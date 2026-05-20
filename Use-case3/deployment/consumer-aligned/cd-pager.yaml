@@ -1,4 +1,4 @@
-name: fraud-pager-parag
+name: fraud-pager
 version: v1alpha
 type: pager
 tags:
@@ -13,7 +13,7 @@ pager:
       value: high
     - valueJqFilter: .name
       operator: equals
-      value: fraud-workflow-failure    # ← matches exactly what monitor sets
+      value: fraud-workflow-failure
   output:
     email:
       emailTargets:

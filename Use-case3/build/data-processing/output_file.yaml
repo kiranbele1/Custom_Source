@@ -1,0 +1,95 @@
+version: v1
+name: wf-frauddata-incremental-export
+type: workflow
+
+tags:
+  - Tier.Gold
+  - fraud
+description: Incrementally exports all new fraud records from fact_fraud_data to all 4 company output folders so each company knows all fraud customers.
+
+workflow:
+  title: Incremental Data Export to All Companies
+
+  dag:
+    - name: wf-incremental-export
+      title: Incremental Fact Fraud Data Export
+      description: Reads only new records from fact_fraud_data Iceberg table and appends all records to all 4 company output folders.
+
+      spec:
+        tags:
+          - Tier.Gold
+        stack: flare:6.0
+        compute: runnable-default
+
+        stackSpec:
+          driver:
+            coreLimit: 1050m
+            cores: 1
+            memory: 1200m
+
+          executor:
+            coreLimit: 1400m
+            cores: 1
+            instances: 1
+            memory: 1600m
+
+          job:
+            explain: true
+            logLevel: INFO
+
+            inputs:
+              - name: fact_fraud_data
+                dataset: dataos://icebase:aml/fact_fraud_data?acl=r
+                format: iceberg
+                incremental:
+                  context: incr_fact_fraud_data
+                  sql: |
+                    SELECT *
+                    FROM fact_fraud_data
+                    WHERE created_at > '$|incr_fact_fraud_data|'
+                  keys:
+                    - name: incr_fact_fraud_data
+                      column: created_at
+
+            outputs:
+              - name: fact_fraud_data_sofl
+                dataset: dataos://usecasedepot:sofl/transactional/output/?acl=rw
+                format: csv
+                options:
+                  saveMode: append
+
+              - name: fact_fraud_data_sohfl
+                dataset: dataos://usecasedepot:sohfl/transactional/output/?acl=rw
+                format: csv
+                options:
+                  saveMode: append
+
+              - name: fact_fraud_data_soslamc
+                dataset: dataos://usecasedepot:soslamc/transactional/output/?acl=rw
+                format: csv
+                options:
+                  saveMode: append
+
+              - name: fact_fraud_data_sosli
+                dataset: dataos://usecasedepot:sosli/transactional/output/?acl=rw
+                format: csv
+                options:
+                  saveMode: append
+
+            steps:
+              - sequence:
+                  - name: fact_fraud_data_sofl
+                    sql: |
+                      SELECT * FROM fact_fraud_data
+
+                  - name: fact_fraud_data_sohfl
+                    sql: |
+                      SELECT * FROM fact_fraud_data
+
+                  - name: fact_fraud_data_soslamc
+                    sql: |
+                      SELECT * FROM fact_fraud_data
+
+                  - name: fact_fraud_data_sosli
+                    sql: |
+                      SELECT * FROM fact_fraud_data

@@ -74,6 +74,7 @@ tables:
       - name: product_id
         description: unique id of product
         type: number
+        primary_key: true
         sql: product_id
 
       - name: product_name
@@ -99,6 +100,7 @@ tables:
       - name: txn_type_id
         description: Transaction type id
         type: number
+        primary_key: true
         sql: txn_type_id
 
       - name: txn_type_name
