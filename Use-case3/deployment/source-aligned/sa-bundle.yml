@@ -13,7 +13,7 @@ bundle:
     initialState: create
     timezone: Asia/Kolkata
     create:
-      cron: '0 9 * * *'   
+      cron: '0 9 * * *'
 
   resources:
     # STEP 1 — Ingest raw CSV into customer_transaction
@@ -81,20 +81,20 @@ bundle:
             is:
               - succeeded
 
-    # # STEP 6 — Update pipeline_control watermark
-    # - id: wf-pipeline-control
-    #   workspace: public
-    #   file: /Users/paragkadam/Documents/Use-Case3/Build/data-processing/pipeline_control.yaml
-    #   dependencies:
-    #     - fact-fraud-data
-    #   dependencyConditions:
-    #     - resourceId: fact-fraud-data
-    #       status:
-    #         is:
-    #           - active
-    #       runtime:
-    #         is:
-    #           - succeeded
+    # STEP 6 — Update pipeline_control watermark
+    - id: wf-pipeline-control
+      workspace: public
+      file: /Users/paragkadam/Documents/Use-Case3/Build/data-processing/pipeline_control.yaml
+      dependencies:
+        - fact-fraud-data
+      dependencyConditions:
+        - resourceId: fact-fraud-data
+          status:
+            is:
+              - active
+          runtime:
+            is:
+              - succeeded
 
     # STEP 7 — Run Soda quality checks on fact_fraud_data
     - id: soda-fraud-fact-quality
@@ -104,6 +104,21 @@ bundle:
         - fact-fraud-data
       dependencyConditions:
         - resourceId: fact-fraud-data
+          status:
+            is:
+              - active
+          runtime:
+            is:
+              - succeeded
+
+    # STEP 8 — Incrementally export fact_fraud_data back to all 4 Azure output folders
+    - id: wf-frauddata-incremental-export
+      workspace: public
+      file: /Users/paragkadam/Documents/Use-Case3/Build/data-processing/incremental_export.yaml
+      dependencies:
+        - soda-fraud-fact-quality
+      dependencyConditions:
+        - resourceId: soda-fraud-fact-quality
           status:
             is:
               - active
